@@ -1,0 +1,221 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: networknodes.ndd.henderiw.be
+spec:
+  group: ndd.henderiw.be
+  names:
+    kind: NetworkNode
+    listKind: NetworkNodeList
+    plural: networknodes
+    singular: networknode
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: NetworkNode is the Schema for the networknodes API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NetworkNodeSpec defines the desired state of NetworkNode
+            properties:
+              device-driver:
+                description: DeviceDriver defines the device driver details to connect
+                  to the network node
+                properties:
+                  kind:
+                    default: gnmi
+                    description: Kind defines the device driver kind
+                    type: string
+                required:
+                - kind
+                type: object
+              target:
+                description: Target defines how we connect to the network node
+                properties:
+                  address:
+                    description: Address holds the IP:port for accessing the network
+                      node
+                    type: string
+                  credentialsName:
+                    description: The name of the secret containing the credentials
+                      (requires keys "username" and "password").
+                    type: string
+                  encoding:
+                    description: Encoding defines the gnmi encoding
+                    type: string
+                  insecure:
+                    description: Insecure runs the communication in an insecure manner
+                    type: boolean
+                  proxy:
+                    description: Proxy used to communicate to the target network node
+                    type: string
+                  skpVerify:
+                    description: SkipVerify disables verification of server certificates
+                      when using HTTPS to connect to the Target. This is required
+                      when the server certificate is self-signed, but is insecure
+                      because it allows a man-in-the-middle to intercept the connection.
+                    type: boolean
+                  tlsCredentialsName:
+                    description: The name of the secret containing the credentials
+                      (requires keys "TLSCA" and "TLSCert", " TLSKey").
+                    type: string
+                required:
+                - address
+                - credentialsName
+                type: object
+            type: object
+          status:
+            description: NetworkNodeStatus defines the observed state of NetworkNode
+            properties:
+              errorCount:
+                default: 0
+                description: ErrorCount records how many times the host has encoutered
+                  an error since the last successful operation
+                type: integer
+              errorMessage:
+                description: the last error message reported by the provisioning subsystem
+                type: string
+              errorType:
+                description: ErrorType indicates the type of failure encountered when
+                  the OperationalStatus is OperationalStatusDown
+                enum:
+                - ""
+                - target error
+                - credential error
+                - container error
+                - device driver error
+                type: string
+              lastUpdated:
+                description: LastUpdated identifies when this status was last observed.
+                format: date-time
+                type: string
+              operationalStatus:
+                description: OperationalStatus holds the operational status of the
+                  networkNode
+                enum:
+                - ""
+                - Up
+                - Down
+                type: string
+              usedDeviceDriverSpec:
+                description: UsedDeviceDriverSpec identifies the used deviceDriver
+                  spec in operational state up
+                properties:
+                  image:
+                    description: Image defines the image to be used for the device
+                      driver
+                    type: string
+                  resources:
+                    description: Resources define the resource requirements for the
+                      device driver
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                type: object
+              usedNetworkNodeSpec:
+                description: UsedNetworkNodeSpec identifies the used networkNode spec
+                  when operational state up
+                properties:
+                  device-driver:
+                    description: DeviceDriver defines the device driver details to
+                      connect to the network node
+                    properties:
+                      kind:
+                        default: gnmi
+                        description: Kind defines the device driver kind
+                        type: string
+                    required:
+                    - kind
+                    type: object
+                  target:
+                    description: Target defines how we connect to the network node
+                    properties:
+                      address:
+                        description: Address holds the IP:port for accessing the network
+                          node
+                        type: string
+                      credentialsName:
+                        description: The name of the secret containing the credentials
+                          (requires keys "username" and "password").
+                        type: string
+                      encoding:
+                        description: Encoding defines the gnmi encoding
+                        type: string
+                      insecure:
+                        description: Insecure runs the communication in an insecure
+                          manner
+                        type: boolean
+                      proxy:
+                        description: Proxy used to communicate to the target network
+                          node
+                        type: string
+                      skpVerify:
+                        description: SkipVerify disables verification of server certificates
+                          when using HTTPS to connect to the Target. This is required
+                          when the server certificate is self-signed, but is insecure
+                          because it allows a man-in-the-middle to intercept the connection.
+                        type: boolean
+                      tlsCredentialsName:
+                        description: The name of the secret containing the credentials
+                          (requires keys "TLSCA" and "TLSCert", " TLSKey").
+                        type: string
+                    required:
+                    - address
+                    - credentialsName
+                    type: object
+                type: object
+            required:
+            - errorCount
+            - errorMessage
+            - operationalStatus
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

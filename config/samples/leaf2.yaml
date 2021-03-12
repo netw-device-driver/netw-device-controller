@@ -1,0 +1,11 @@
+---
+apiVersion: ndd.henderiw.be/v1
+kind: NetworkNode
+metadata:
+  name: leaf2
+spec:
+  target:
+    address: 172.20.20.4:57400
+    credentialsName: srl-secrets
+    encoding: json_ietf
+    skpVerify: true

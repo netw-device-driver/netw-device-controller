@@ -1,0 +1,7 @@
+apiVersion: ndd.henderiw.be/v1
+kind: DeviceDriver
+metadata:
+  name: devicedriver-sample
+spec:
+  # Add fields here
+  foo: bar

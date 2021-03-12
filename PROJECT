@@ -1,0 +1,21 @@
+domain: henderiw.be
+layout: go.kubebuilder.io/v3
+projectName: netw-device-controller
+repo: github.com/netw-device-driver/netw-device-controller
+resources:
+- crdVersion: v1
+  group: ndd
+  kind: NetworkNode
+  version: v1
+- crdVersion: v1
+  group: ndd
+  kind: NetworkDevice
+  version: v1
+- crdVersion: v1
+  group: ndd
+  kind: DeviceDriver
+  version: v1
+version: 3-alpha
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}

@@ -1,0 +1,690 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: netw-device-controller-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: devicedrivers.ndd.henderiw.be
+spec:
+  group: ndd.henderiw.be
+  names:
+    kind: DeviceDriver
+    listKind: DeviceDriverList
+    plural: devicedrivers
+    singular: devicedriver
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: DeviceDriver is the Schema for the devicedrivers API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DeviceDriverSpec defines the desired state of DeviceDriver
+            properties:
+              image:
+                description: Image defines the image to be used for the device driver
+                type: string
+              resources:
+                description: Resources define the resource requirements for the device driver
+                properties:
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    type: object
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: networkdevices.ndd.henderiw.be
+spec:
+  group: ndd.henderiw.be
+  names:
+    kind: NetworkDevice
+    listKind: NetworkDeviceList
+    plural: networkdevices
+    singular: networkdevice
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: NetworkDevice is the Schema for the networkdevices API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NetworkDeviceSpec defines the desired state of NetworkDevice
+            properties:
+              target:
+                description: Target defines how we connect to the network node
+                properties:
+                  address:
+                    description: Address holds the IP:port for accessing the network node
+                    type: string
+                  credentialsName:
+                    description: The name of the secret containing the credentials (requires keys "username" and "password").
+                    type: string
+                  encoding:
+                    description: Encoding defines the gnmi encoding
+                    type: string
+                  insecure:
+                    description: Insecure runs the communication in an insecure manner
+                    type: boolean
+                  proxy:
+                    description: Proxy used to communicate to the target network node
+                    type: string
+                  skpVerify:
+                    description: SkipVerify disables verification of server certificates when using HTTPS to connect to the Target. This is required when the server certificate is self-signed, but is insecure because it allows a man-in-the-middle to intercept the connection.
+                    type: boolean
+                  tlsCredentialsName:
+                    description: The name of the secret containing the credentials (requires keys "TLSCA" and "TLSCert", " TLSKey").
+                    type: string
+                required:
+                - address
+                - credentialsName
+                type: object
+            type: object
+          status:
+            description: NetworkDeviceStatus defines the observed state of NetworkDevice
+            properties:
+              discoveryStatus:
+                description: DiscoveryStatus holds the discovery status of the networkNode
+                enum:
+                - ""
+                - Enabled
+                - Disabled
+                - Discovery
+                - Deleting
+                type: string
+              errorCount:
+                default: 0
+                description: ErrorCount records how many times the host has encoutered an error since the last successful operation
+                type: integer
+              errorMessage:
+                description: the last error message reported by the provisioning subsystem
+                type: string
+              errorType:
+                description: ErrorType indicates the type of failure encountered when the OperationalStatus is OperationalStatusDown
+                enum:
+                - ""
+                - target error
+                - credential error
+                - discovery error
+                - provisioning error
+                type: string
+              goodCredentials:
+                description: the last credentials we were able to validate as working
+                properties:
+                  credentials:
+                    description: SecretReference represents a Secret Reference. It has enough information to retrieve secret in any namespace
+                    properties:
+                      name:
+                        description: Name is unique within a namespace to reference a secret resource.
+                        type: string
+                      namespace:
+                        description: Namespace defines the space within which the secret name must be unique.
+                        type: string
+                    type: object
+                  credentialsVersion:
+                    type: string
+                type: object
+              hardwareDetails:
+                description: The HardwareDetails discovered on the Network Node.
+                properties:
+                  kind:
+                    description: the Kind of hardware
+                    type: string
+                  macAddress:
+                    description: the Mac address of the hardware
+                    type: string
+                  serialNumber:
+                    description: the Serial Number of the hardware
+                    type: string
+                type: object
+              lastUpdated:
+                description: LastUpdated identifies when this status was last observed.
+                format: date-time
+                type: string
+              operationalStatus:
+                description: OperationalStatus holds the operational status of the networkNode
+                enum:
+                - ""
+                - Up
+                - Down
+                type: string
+              triedCredentials:
+                description: the last credentials we sent to the provisioning backend
+                properties:
+                  credentials:
+                    description: SecretReference represents a Secret Reference. It has enough information to retrieve secret in any namespace
+                    properties:
+                      name:
+                        description: Name is unique within a namespace to reference a secret resource.
+                        type: string
+                      namespace:
+                        description: Namespace defines the space within which the secret name must be unique.
+                        type: string
+                    type: object
+                  credentialsVersion:
+                    type: string
+                type: object
+            required:
+            - discoveryStatus
+            - errorCount
+            - errorMessage
+            - operationalStatus
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: networknodes.ndd.henderiw.be
+spec:
+  group: ndd.henderiw.be
+  names:
+    kind: NetworkNode
+    listKind: NetworkNodeList
+    plural: networknodes
+    singular: networknode
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: NetworkNode is the Schema for the networknodes API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NetworkNodeSpec defines the desired state of NetworkNode
+            properties:
+              device-driver:
+                description: DeviceDriver defines the device driver details to connect to the network node
+                properties:
+                  kind:
+                    default: gnmi
+                    description: Kind defines the device driver kind
+                    type: string
+                required:
+                - kind
+                type: object
+              target:
+                description: Target defines how we connect to the network node
+                properties:
+                  address:
+                    description: Address holds the IP:port for accessing the network node
+                    type: string
+                  credentialsName:
+                    description: The name of the secret containing the credentials (requires keys "username" and "password").
+                    type: string
+                  encoding:
+                    description: Encoding defines the gnmi encoding
+                    type: string
+                  insecure:
+                    description: Insecure runs the communication in an insecure manner
+                    type: boolean
+                  proxy:
+                    description: Proxy used to communicate to the target network node
+                    type: string
+                  skpVerify:
+                    description: SkipVerify disables verification of server certificates when using HTTPS to connect to the Target. This is required when the server certificate is self-signed, but is insecure because it allows a man-in-the-middle to intercept the connection.
+                    type: boolean
+                  tlsCredentialsName:
+                    description: The name of the secret containing the credentials (requires keys "TLSCA" and "TLSCert", " TLSKey").
+                    type: string
+                required:
+                - address
+                - credentialsName
+                type: object
+            type: object
+          status:
+            description: NetworkNodeStatus defines the observed state of NetworkNode
+            properties:
+              errorCount:
+                default: 0
+                description: ErrorCount records how many times the host has encoutered an error since the last successful operation
+                type: integer
+              errorMessage:
+                description: the last error message reported by the provisioning subsystem
+                type: string
+              errorType:
+                description: ErrorType indicates the type of failure encountered when the OperationalStatus is OperationalStatusDown
+                enum:
+                - ""
+                - target error
+                - credential error
+                - container error
+                - device driver error
+                type: string
+              lastUpdated:
+                description: LastUpdated identifies when this status was last observed.
+                format: date-time
+                type: string
+              operationalStatus:
+                description: OperationalStatus holds the operational status of the networkNode
+                enum:
+                - ""
+                - Up
+                - Down
+                type: string
+              usedDeviceDriverSpec:
+                description: UsedDeviceDriverSpec identifies the used deviceDriver spec in operational state up
+                properties:
+                  image:
+                    description: Image defines the image to be used for the device driver
+                    type: string
+                  resources:
+                    description: Resources define the resource requirements for the device driver
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                type: object
+              usedNetworkNodeSpec:
+                description: UsedNetworkNodeSpec identifies the used networkNode spec when operational state up
+                properties:
+                  device-driver:
+                    description: DeviceDriver defines the device driver details to connect to the network node
+                    properties:
+                      kind:
+                        default: gnmi
+                        description: Kind defines the device driver kind
+                        type: string
+                    required:
+                    - kind
+                    type: object
+                  target:
+                    description: Target defines how we connect to the network node
+                    properties:
+                      address:
+                        description: Address holds the IP:port for accessing the network node
+                        type: string
+                      credentialsName:
+                        description: The name of the secret containing the credentials (requires keys "username" and "password").
+                        type: string
+                      encoding:
+                        description: Encoding defines the gnmi encoding
+                        type: string
+                      insecure:
+                        description: Insecure runs the communication in an insecure manner
+                        type: boolean
+                      proxy:
+                        description: Proxy used to communicate to the target network node
+                        type: string
+                      skpVerify:
+                        description: SkipVerify disables verification of server certificates when using HTTPS to connect to the Target. This is required when the server certificate is self-signed, but is insecure because it allows a man-in-the-middle to intercept the connection.
+                        type: boolean
+                      tlsCredentialsName:
+                        description: The name of the secret containing the credentials (requires keys "TLSCA" and "TLSCert", " TLSKey").
+                        type: string
+                    required:
+                    - address
+                    - credentialsName
+                    type: object
+                type: object
+            required:
+            - errorCount
+            - errorMessage
+            - operationalStatus
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: netw-device-controller-leader-election-role
+  namespace: netw-device-controller-system
+rules:
+- apiGroups:
+  - ""
+  - coordination.k8s.io
+  resources:
+  - configmaps
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: netw-device-controller-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ndd.henderiw.be
+  resources:
+  - devicedrivers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ndd.henderiw.be
+  resources:
+  - networknodes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ndd.henderiw.be
+  resources:
+  - networknodes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ndd.henderiw.be
+  resources:
+  - networknodes/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: netw-device-controller-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: netw-device-controller-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: netw-device-controller-leader-election-rolebinding
+  namespace: netw-device-controller-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: netw-device-controller-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: netw-device-controller-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: netw-device-controller-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: netw-device-controller-manager-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: netw-device-controller-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: netw-device-controller-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: netw-device-controller-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: netw-device-controller-system
+---
+apiVersion: v1
+data:
+  controller_manager_config.yaml: |
+    apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+    kind: ControllerManagerConfig
+    health:
+      healthProbeBindAddress: :8081
+    metrics:
+      bindAddress: 127.0.0.1:8080
+    webhook:
+      port: 9443
+    leaderElection:
+      leaderElect: true
+      resourceName: a8f17801.henderiw.be
+kind: ConfigMap
+metadata:
+  name: netw-device-controller-manager-config
+  namespace: netw-device-controller-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: netw-device-controller-controller-manager-metrics-service
+  namespace: netw-device-controller-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: netw-device-controller-controller-manager
+  namespace: netw-device-controller-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=10
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+        image: henderiw/netwddctrlr:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+      securityContext:
+        runAsUser: 65532
+      terminationGracePeriodSeconds: 10

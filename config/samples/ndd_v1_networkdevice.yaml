@@ -1,0 +1,7 @@
+apiVersion: ndd.henderiw.be/v1
+kind: NetworkDevice
+metadata:
+  name: networkdevice-sample
+spec:
+  # Add fields here
+  foo: bar

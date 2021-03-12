@@ -1,0 +1,13 @@
+---
+apiVersion: ndd.henderiw.be/v1
+kind: NetworkNode
+metadata:
+  name: leaf1
+spec:
+  device-driver:
+    kind: gnmi
+  target:
+    address: 172.20.20.5:57400
+    credentialsName: srl-secrets
+    encoding: json_ietf
+    skpVerify: true

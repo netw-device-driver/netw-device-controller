@@ -1,0 +1,24 @@
+# permissions for end users to edit networkdevices.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: networkdevice-editor-role
+rules:
+- apiGroups:
+  - ndd.henderiw.be
+  resources:
+  - networkdevices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ndd.henderiw.be
+  resources:
+  - networkdevices/status
+  verbs:
+  - get

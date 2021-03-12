@@ -1,0 +1,16 @@
+apiVersion: ndd.henderiw.be/v1
+kind: DeviceDriver
+metadata:
+  name: gnmi-device-driver
+  labels:
+    ddriver-kind: gnmi
+spec:
+  # Add fields here
+  image: henderiw/nats-netwdevicedriver:latest
+  resources:
+    requests:
+        memory: "64Mi"
+        cpu: "30m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
