@@ -33,46 +33,46 @@ const (
 // the network node.
 type TargetDetails struct {
 	// Address holds the IP:port for accessing the network node
-	Address string `json:"address"`
+	Address *string `json:"address"`
 
 	// Proxy used to communicate to the target network node
-	Proxy string `json:"proxy,omitempty"`
+	Proxy *string `json:"proxy,omitempty"`
 
 	// The name of the secret containing the credentials (requires
 	// keys "username" and "password").
-	CredentialsName string `json:"credentialsName"`
+	CredentialsName *string `json:"credentialsName"`
 
 	// The name of the secret containing the credentials (requires
 	// keys "TLSCA" and "TLSCert", " TLSKey").
-	TLSCredentialsName string `json:"tlsCredentialsName,omitempty"`
+	TLSCredentialsName *string `json:"tlsCredentialsName,omitempty"`
 
 	// SkipVerify disables verification of server certificates when using
 	// HTTPS to connect to the Target. This is required when the server
 	// certificate is self-signed, but is insecure because it allows a
 	// man-in-the-middle to intercept the connection.
-	SkipVerify bool `json:"skpVerify,omitempty"`
+	SkipVerify *bool `json:"skpVerify,omitempty"`
 
 	// Insecure runs the communication in an insecure manner
-	Insecure bool `json:"insecure,omitempty"`
+	Insecure *bool `json:"insecure,omitempty"`
 
 	// Encoding defines the gnmi encoding
-	Encoding string `json:"encoding,omitempty"`
+	Encoding *string `json:"encoding,omitempty"`
 }
 
 // DeviceDriverDetails defines the device driver details to connect to the network node
 type DeviceDriverDetails struct {
 	// Kind defines the device driver kind
 	// +kubebuilder:default:=gnmi
-	Kind DeviceDriverKind `json:"kind"`
+	Kind *DeviceDriverKind `json:"kind"`
 }
 
 // NetworkNodeSpec defines the desired state of NetworkNode
 type NetworkNodeSpec struct {
 	// Target defines how we connect to the network node
-	Target TargetDetails `json:"target,omitempty"`
+	Target *TargetDetails `json:"target,omitempty"`
 
 	// DeviceDriver defines the device driver details to connect to the network node
-	DeviceDriver DeviceDriverDetails `json:"device-driver,omitempty"`
+	DeviceDriver *DeviceDriverDetails `json:"device-driver,omitempty"`
 }
 
 // OperationalStatus represents the state of the network node
@@ -91,6 +91,27 @@ const (
 	OperationalStatusDown OperationalStatus = "Down"
 )
 
+// IsValid discovery status
+func (os OperationalStatus) IsValid() bool {
+	switch os {
+	case OperationalStatusNone:
+	case OperationalStatusUp:
+	case OperationalStatusDown:
+	default:
+		return false
+	}
+	return true
+}
+
+// String2OperationalStatus retuns pointer to enum
+func String2OperationalStatus(s string) *OperationalStatus {
+	os := OperationalStatus(s)
+	if !os.IsValid() {
+		panic("Provided error type is not valid")
+	}
+	return &os
+}
+
 // ErrorType indicates the class of problem that has caused the Network Node resource
 // to enter an error state.
 type ErrorType string
@@ -107,27 +128,50 @@ const (
 	// credentials supplied are not correct or not existing
 	CredentialError ErrorType = "credential error"
 
-	// ContainerError is an error condition occuring when the controller
-	// fails to provision or deprovision the ddriver container.
-	ContainerError ErrorType = "container error"
+	// DeploymentError is an error condition occuring when the controller
+	// fails to provision or deprovision the ddriver deployment.
+	DeploymentError ErrorType = "deployment error"
 
 	// DeviceDriverError is an error condition occuring when the controller
 	// fails to retrieve the ddriver information.
 	DeviceDriverError ErrorType = "device driver error"
 )
 
+// IsValid discovery status
+func (et ErrorType) IsValid() bool {
+	switch et {
+	case NoneError:
+	case TargetError:
+	case CredentialError:
+	case DeploymentError:
+	case DeviceDriverError:
+	default:
+		return false
+	}
+	return true
+}
+
+// String2ErrorType retuns pointer to enum
+func String2ErrorType(s string) *ErrorType {
+	et := ErrorType(s)
+	if !et.IsValid() {
+		panic("Provided error type is not valid")
+	}
+	return &et
+}
+
 // NetworkNodeStatus defines the observed state of NetworkNode
 type NetworkNodeStatus struct {
 	// OperationalStatus holds the operational status of the networkNode
 	// +kubebuilder:validation:Enum="";Up;Down
 	// +kubebuilder:default:=Down
-	OperationalStatus OperationalStatus `json:"operationalStatus"`
+	OperationalStatus *OperationalStatus `json:"operationalStatus"`
 
 	// ErrorType indicates the type of failure encountered when the
 	// OperationalStatus is OperationalStatusDown
 	// +kubebuilder:validation:Enum="";target error;credential error;container error;device driver error
 	// +kubebuilder:default:=""
-	ErrorType ErrorType `json:"errorType,omitempty"`
+	ErrorType *ErrorType `json:"errorType,omitempty"`
 
 	// LastUpdated identifies when this status was last observed.
 	// +optional
@@ -135,11 +179,11 @@ type NetworkNodeStatus struct {
 
 	// ErrorCount records how many times the host has encoutered an error since the last successful operation
 	// +kubebuilder:default:=0
-	ErrorCount int `json:"errorCount"`
+	ErrorCount *int `json:"errorCount"`
 
 	// the last error message reported by the provisioning subsystem
 	// +kubebuilder:default:=""
-	ErrorMessage string `json:"errorMessage"`
+	ErrorMessage *string `json:"errorMessage"`
 
 	// UsedNetworkNodeSpec identifies the used networkNode spec when operational state up
 	UsedNetworkNodeSpec *NetworkNodeSpec `json:"usedNetworkNodeSpec,omitempty"`
@@ -177,7 +221,7 @@ func init() {
 // Secret containing the credentials associated with the host.
 func (nn *NetworkNode) CredentialsKey() types.NamespacedName {
 	return types.NamespacedName{
-		Name:      nn.Spec.Target.CredentialsName,
+		Name:      *nn.Spec.Target.CredentialsName,
 		Namespace: nn.ObjectMeta.Namespace,
 	}
 }
@@ -185,25 +229,51 @@ func (nn *NetworkNode) CredentialsKey() types.NamespacedName {
 // SetOperationalStatus updates the OperationalStatus field and returns
 // true when a change is made or false when no change is made.
 func (nn *NetworkNode) SetOperationalStatus(status OperationalStatus) bool {
-	if nn.Status.OperationalStatus != status {
-		nn.Status.OperationalStatus = status
+	if nn.Status.OperationalStatus == nil {
+		nn.Status.OperationalStatus = new(OperationalStatus)
+		*nn.Status.OperationalStatus = status
 		return true
 	}
+	if *nn.Status.OperationalStatus != status {
+		*nn.Status.OperationalStatus = status
+		return true
+	}
+
 	return false
 }
 
 // SetErrorType updates the Error Type field and returns
 // true when a change is made or false when no change is made.
 func (nn *NetworkNode) SetErrorType(errorType ErrorType) bool {
-	if nn.Status.ErrorType != errorType {
-		nn.Status.ErrorType = errorType
+	if nn.Status.ErrorType == nil {
+		nn.Status.ErrorType = new(ErrorType)
+		*nn.Status.ErrorType = errorType
 		return true
+	}
+	if *nn.Status.ErrorType != errorType {
+		*nn.Status.ErrorType = errorType
+		return true
+	}
+	return false
+}
+
+// SetErrorMessage updates the Error message field and returns
+// true when a change is made or false when no change is made.
+func (nn *NetworkNode) SetErrorMessage(errorMessage *string) bool {
+	if nn.Status.ErrorMessage == nil {
+		nn.Status.ErrorMessage = new(string)
+		*nn.Status.ErrorMessage = *errorMessage
+	} else {
+		if nn.Status.ErrorMessage != errorMessage {
+			nn.Status.ErrorMessage = errorMessage
+		}
 	}
 	return false
 }
 
 // SetUsedNetworkNodeSpec updates the used network node spec
 func (nn *NetworkNode) SetUsedNetworkNodeSpec(nnSpec *NetworkNodeSpec) {
+	nn.Status.UsedNetworkNodeSpec = new(NetworkNodeSpec)
 	nn.Status.UsedNetworkNodeSpec = nnSpec
 }
 

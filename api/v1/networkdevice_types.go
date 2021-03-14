@@ -17,31 +17,33 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NetworkDeviceSpec defines the desired state of NetworkDevice
 type NetworkDeviceSpec struct {
 	// Address defines how we connect to the network node
-	Address string `json:"address,omitempty"`
+	Address *string `json:"address,omitempty"`
 }
 
 // DeviceDetails collects information about the deiscovered device
 type DeviceDetails struct {
 	// Host name
-	HostName string `json:"hostname,omitempty"`
+	HostName *string `json:"hostname,omitempty"`
 
 	// the Kind of hardware
-	Kind string `json:"kind,omitempty"`
+	Kind *string `json:"kind,omitempty"`
 
 	// SW version
-	SwVersion string `json:"swVersion,omitempty"`
+	SwVersion *string `json:"swVersion,omitempty"`
 
 	// the Mac address of the hardware
-	MacAddress string `json:"macAddress,omitempty"`
+	MacAddress *string `json:"macAddress,omitempty"`
 
 	// the Serial Number of the hardware
-	SerialNumber string `json:"serialNumber,omitempty"`
+	SerialNumber *string `json:"serialNumber,omitempty"`
 }
 
 // DiscoveryStatus defines the states the device driver will report
@@ -63,15 +65,47 @@ const (
 	DiscoveryStatusReady DiscoveryStatus = "Ready"
 )
 
+// IsValid discovery status
+func (ds DiscoveryStatus) IsValid() bool {
+	switch ds {
+	case DiscoveryStatusNone:
+	case DiscoveryStatusNotReady:
+	case DiscoveryStatusDiscovery:
+	case DiscoveryStatusReady:
+	default:
+		return false
+	}
+	return true
+}
+
+// String2DiscoveryStatus retuns pointer to enum
+func String2DiscoveryStatus(s string) *DiscoveryStatus {
+	ds := DiscoveryStatus(s)
+	if !ds.IsValid() {
+		panic("Provided discovery status is not valid")
+	}
+	return &ds
+}
+
+// SetDiscoveryStatus updates the DiscoveryStatus field and returns
+// true when a change is made or false when no change is made.
+func (nd *NetworkDevice) SetDiscoveryStatus(status DiscoveryStatus) bool {
+	if nd.Status.DiscoveryStatus != String2DiscoveryStatus(fmt.Sprintf("%s", status)) {
+		nd.Status.DiscoveryStatus = String2DiscoveryStatus(fmt.Sprintf("%s", status))
+		return true
+	}
+	return false
+}
+
 // NetworkDeviceStatus defines the observed state of NetworkDevice
 type NetworkDeviceStatus struct {
 	// The discovered DeviceDetails
-	DeviceDetails DeviceDetails `json:"hardwareDetails,omitempty"`
+	DeviceDetails *DeviceDetails `json:"hardwareDetails,omitempty"`
 
 	// DiscoveryStatus holds the discovery status of the networkNode
 	// +kubebuilder:validation:Enum="";Ready;Not Ready;Discovery
 	// +kubebuilder:default:="Not Ready"
-	DiscoveryStatus DiscoveryStatus `json:"discoveryStatus"`
+	DiscoveryStatus *DiscoveryStatus `json:"discoveryStatus"`
 
 	// LastUpdated identifies when this status was last observed.
 	// +optional

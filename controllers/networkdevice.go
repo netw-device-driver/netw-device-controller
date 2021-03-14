@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	nddv1 "github.com/netw-device-driver/netw-device-controller/api/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,9 +26,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+// createNetworkDevice function
 func (r *NetworkNodeReconciler) createNetworkDevice(ctx context.Context, nn *nddv1.NetworkNode) error {
 
-	networkDevice := &nddv1.NetworkDevice{
+	nd := &nddv1.NetworkDevice{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nn.Name,
 			Namespace: nn.Namespace,
@@ -38,62 +40,68 @@ func (r *NetworkNodeReconciler) createNetworkDevice(ctx context.Context, nn *ndd
 		Spec: nddv1.NetworkDeviceSpec{
 			Address: nn.Spec.Target.Address,
 		},
-		Status: nddv1.NetworkDeviceStatus{
-			DiscoveryStatus: "Not Ready",
-		},
 	}
-	if err := r.Create(ctx, networkDevice); err != nil {
+	if err := r.Create(ctx, nd); err != nil {
 		if !k8serrors.IsAlreadyExists(err) {
-			return err
+			return &CreateNetworkDeviceError{message: fmt.Sprintf("Failed to create Network Device: %s", err)}
+			//return err
 		}
 		ndKey := types.NamespacedName{
 			Name:      nn.Name,
 			Namespace: nn.Namespace,
 		}
-		if err := r.Get(ctx, ndKey, networkDevice); err != nil {
-			return err
+		if err := r.Get(ctx, ndKey, nd); err != nil {
+			return &GetNetworkDeviceError{message: fmt.Sprintf("Failed to get Network Device: %s", err)}
+			//return err
 		}
 	}
-	r.Log.WithValues("NetworkDevice Object", networkDevice).Info("created networkDevice...")
+	r.Log.WithValues("NetworkDevice Object", nd).Info("created networkDevice...")
 
-	if err := r.saveNetworkDeviceStatus(ctx, networkDevice); err != nil {
-		return err
+	nd.SetDiscoveryStatus(nddv1.DiscoveryStatusNotReady)
+
+	if err := r.saveNetworkDeviceStatus(ctx, nd); err != nil {
+		return &SaveNetworkDeviceError{message: fmt.Sprintf("Failed to get Network Device: %s", err)}
+		//return err
 	}
 	return nil
 }
 
+// updateNetworkDevice function
 func (r *NetworkNodeReconciler) updateNetworkDevice(ctx context.Context, nn *nddv1.NetworkNode) error {
-	networkDevice := &nddv1.NetworkDevice{}
+	nd := &nddv1.NetworkDevice{}
 	ndKey := types.NamespacedName{
 		Name:      nn.Name,
 		Namespace: nn.Namespace,
 	}
-	if err := r.Get(ctx, ndKey, networkDevice); err != nil {
-		return err
+	if err := r.Get(ctx, ndKey, nd); err != nil {
+		return &GetNetworkDeviceError{message: fmt.Sprintf("Failed to get Network Device: %s", err)}
+		//return err
 	}
 
-	networkDevice.Spec = nddv1.NetworkDeviceSpec{
+	nd.Spec = nddv1.NetworkDeviceSpec{
 		Address: nn.Spec.Target.Address,
 	}
-	networkDevice.Status = nddv1.NetworkDeviceStatus{
-		DiscoveryStatus: "Not Ready",
-	}
 
-	if err := r.Update(ctx, networkDevice); err != nil {
-		return err
-	}
-	r.Log.WithValues("NetworkDevice Object", networkDevice).Info("updated networkDevice...")
+	nd.SetDiscoveryStatus(nddv1.DiscoveryStatusNotReady)
 
-	if err := r.saveNetworkDeviceStatus(ctx, networkDevice); err != nil {
-		return err
+	if err := r.Update(ctx, nd); err != nil {
+		return &UpdateNetworkDeviceError{message: fmt.Sprintf("Failed to update Network Device: %s", err)}
+		//return err
+	}
+	r.Log.WithValues("NetworkDevice Object", nd).Info("updated networkDevice...")
+
+	if err := r.saveNetworkDeviceStatus(ctx, nd); err != nil {
+		return &SaveNetworkDeviceError{message: fmt.Sprintf("Failed to get Network Device: %s", err)}
+		//return err
 	}
 
 	return nil
 
 }
 
+// deleteNetworkDevice function
 func (r *NetworkNodeReconciler) deleteNetworkDevice(ctx context.Context, nn *nddv1.NetworkNode) error {
-	networkDevice := &nddv1.NetworkDevice{
+	nd := &nddv1.NetworkDevice{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nn.Name,
 			Namespace: nn.Namespace,
@@ -102,14 +110,16 @@ func (r *NetworkNodeReconciler) deleteNetworkDevice(ctx context.Context, nn *ndd
 			},
 		},
 	}
-	err := r.Delete(ctx, networkDevice)
+	err := r.Delete(ctx, nd)
 	if !k8serrors.IsNotFound(err) {
-		return err
+		return &DeleteNetworkDeviceError{message: fmt.Sprintf("Failed to delete Network Device: %s", err)}
+		//return err
 	}
-	r.Log.WithValues("NetworkDevice Object", networkDevice).Info("deleted networkDevice...")
+	r.Log.WithValues("NetworkDevice Object", nd).Info("deleted networkDevice...")
 	return nil
 }
 
+// saveNetworkDeviceStatus function
 func (r *NetworkNodeReconciler) saveNetworkDeviceStatus(ctx context.Context, nd *nddv1.NetworkDevice) error {
 	t := metav1.Now()
 	nd.Status.DeepCopy()

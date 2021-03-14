@@ -32,7 +32,7 @@ import (
 func (r *NetworkNodeReconciler) createDeployment(ctx context.Context, nn *nddv1.NetworkNode, c *corev1.Container) error {
 	deployment := &appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "nddriver-deployment-" + nn.Name,
+			Name:      "nddriver-deployment-" + nn.Name,
 			Namespace: r.Namespace,
 			Labels: map[string]string{
 				"netwDDriver": "nddriver-" + nn.Name,
@@ -62,7 +62,8 @@ func (r *NetworkNodeReconciler) createDeployment(ctx context.Context, nn *nddv1.
 
 	err := r.Create(ctx, deployment)
 	if err != nil {
-		return err
+		return &CreateDeploymentError{message: fmt.Sprintf("Failed to create Deployment: %s", err)}
+		//return err
 	}
 	r.Log.WithValues("Deployment Object", deployment).Info("created deployment...")
 	return nil
@@ -72,7 +73,7 @@ func (r *NetworkNodeReconciler) updateDeployment(ctx context.Context, nn *nddv1.
 
 	deployment := &appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "nddriver-deployment-" + nn.Name,
+			Name:      "nddriver-deployment-" + nn.Name,
 			Namespace: r.Namespace,
 			Labels: map[string]string{
 				"netwDDriver": "nddriver-" + nn.Name,
@@ -102,7 +103,8 @@ func (r *NetworkNodeReconciler) updateDeployment(ctx context.Context, nn *nddv1.
 
 	err := r.Update(ctx, deployment)
 	if err != nil {
-		return err
+		return &UpdateDeploymentError{message: fmt.Sprintf("Failed to update Deployment: %s", err)}
+		//return err
 	}
 	r.Log.WithValues("Deployment Object", deployment).Info("updated deployment...")
 	return nil
@@ -111,7 +113,7 @@ func (r *NetworkNodeReconciler) updateDeployment(ctx context.Context, nn *nddv1.
 func (r *NetworkNodeReconciler) deleteDeployment(ctx context.Context, nn *nddv1.NetworkNode) error {
 	deployment := &appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "nddriver-deployment-" + nn.Name,
+			Name:      "nddriver-deployment-" + nn.Name,
 			Namespace: r.Namespace,
 			Labels: map[string]string{
 				"netwDDriver": "nddriver-" + nn.Name,
@@ -120,7 +122,8 @@ func (r *NetworkNodeReconciler) deleteDeployment(ctx context.Context, nn *nddv1.
 	}
 	err := r.Delete(ctx, deployment)
 	if err != nil {
-		return err
+		return &DeleteDeploymentError{message: fmt.Sprintf("Failed to delete Deployment: %s", err)}
+		//return err
 	}
 	r.Log.WithValues("Deployment Object", deployment).Info("deleted deployment...")
 	return nil
@@ -129,7 +132,7 @@ func (r *NetworkNodeReconciler) deleteDeployment(ctx context.Context, nn *nddv1.
 func (r *NetworkNodeReconciler) buildAndValidateDeviceDriver(ctx context.Context, req ctrl.Request, nn *nddv1.NetworkNode) (c *corev1.Container, err error) {
 	selectors := []client.ListOption{
 		client.MatchingLabels{
-			"ddriver-kind": string(nn.Spec.DeviceDriver.Kind),
+			"ddriver-kind": string(*nn.Spec.DeviceDriver.Kind),
 		},
 	}
 	dds := &nddv1.DeviceDriverList{}
@@ -139,15 +142,13 @@ func (r *NetworkNodeReconciler) buildAndValidateDeviceDriver(ctx context.Context
 
 	}
 	dds.DeepCopy()
-	r.Log.WithValues("dds", dds).Info("Device driver Info")
 
 	for _, dd := range dds.Items {
 		c = dd.Spec.Container
 	}
 
-	r.Log.WithValues("ddinfo", c).Info("Device driver Info")
-
 	if c == nil {
+		r.Log.Info("Using the default device driver configuration")
 		// apply the default settings
 		env := corev1.EnvVar{
 			Name: "MY_POD_NAMESPACE",
@@ -185,6 +186,7 @@ func (r *NetworkNodeReconciler) buildAndValidateDeviceDriver(ctx context.Context
 			},
 		}
 	} else {
+		r.Log.Info("Using the specific device driver configuration")
 		// update the argument/environment information, since this is specific for the container deployment
 		env := corev1.EnvVar{
 			Name: "MY_POD_NAMESPACE",

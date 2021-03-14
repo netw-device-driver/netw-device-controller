@@ -25,4 +25,6 @@ func removeString(slice []string, s string) (result []string) {
 	return result
 }
 
-func int32Ptr(i int32) *int32 { return &i }
+func int32Ptr(i int32) *int32    { return &i }
+func intPtr(i int) *int          { return &i }
+func stringPtr(s string) *string { return &s }

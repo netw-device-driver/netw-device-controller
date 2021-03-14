@@ -60,3 +60,83 @@ func (e ResolveDeviceDriverRefError) Error() string {
 	return fmt.Sprintf("Device Driver retreive error %s",
 		e.message)
 }
+
+// CreateNetworkDeviceError is return when the network device cannot get created
+type CreateNetworkDeviceError struct {
+	message string
+}
+
+func (e CreateNetworkDeviceError) Error() string {
+	return fmt.Sprintf("Network Device error %s",
+		e.message)
+}
+
+// UpdateNetworkDeviceError is return when the network device cannot get updated
+type UpdateNetworkDeviceError struct {
+	message string
+}
+
+func (e UpdateNetworkDeviceError) Error() string {
+	return fmt.Sprintf("Network Device error %s",
+		e.message)
+}
+
+// DeleteNetworkDeviceError is return when the network device cannot get deleted
+type DeleteNetworkDeviceError struct {
+	message string
+}
+
+func (e DeleteNetworkDeviceError) Error() string {
+	return fmt.Sprintf("Network Device error %s",
+		e.message)
+}
+
+// GetNetworkDeviceError is return when the network device cannot be retrieved
+type GetNetworkDeviceError struct {
+	message string
+}
+
+func (e GetNetworkDeviceError) Error() string {
+	return fmt.Sprintf("Network Device error %s",
+		e.message)
+}
+
+// SaveNetworkDeviceError is return when the network device cannot be saved
+type SaveNetworkDeviceError struct {
+	message string
+}
+
+func (e SaveNetworkDeviceError) Error() string {
+	return fmt.Sprintf("Network Device error %s",
+		e.message)
+}
+
+// CreateDeploymentError is return when the deployement cannot get created
+type CreateDeploymentError struct {
+	message string
+}
+
+func (e CreateDeploymentError) Error() string {
+	return fmt.Sprintf("Deployment error %s",
+		e.message)
+}
+
+// UpdateDeploymentError is return when the deployement cannot get updated
+type UpdateDeploymentError struct {
+	message string
+}
+
+func (e UpdateDeploymentError) Error() string {
+	return fmt.Sprintf("Deployment error %s",
+		e.message)
+}
+
+// DeleteDeploymentError is return when the deployement cannot get deleted
+type DeleteDeploymentError struct {
+	message string
+}
+
+func (e DeleteDeploymentError) Error() string {
+	return fmt.Sprintf("Deployment error %s",
+		e.message)
+}

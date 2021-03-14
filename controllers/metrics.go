@@ -45,13 +45,21 @@ var credentialsInvalid = prometheus.NewCounter(prometheus.CounterOpts{
 	Name: "ndd_credentials_invalid_total",
 	Help: "Number of times a network node's credentials are found to be invalid",
 })
-var unhandledCredentialsError = prometheus.NewCounter(prometheus.CounterOpts{
-	Name: "ndd_credentials_unhandled_error_total",
-	Help: "Number of times getting a network node's credentials fails in an unexpected way",
+var unhandledError = prometheus.NewCounter(prometheus.CounterOpts{
+	Name: "ndd_unhandled_error_total",
+	Help: "Number of times getting a network node's error in an unexpected way",
 })
 var deviceDriverError = prometheus.NewCounter(prometheus.CounterOpts{
 	Name: "ndd_device_driver_error_total",
 	Help: "Number of times a network node's device driver are found to be missing",
+})
+var networkDeviceError = prometheus.NewCounter(prometheus.CounterOpts{
+	Name: "ndd_network_device_error_total",
+	Help: "Number of times a network device issue occured",
+})
+var deploymentError = prometheus.NewCounter(prometheus.CounterOpts{
+	Name: "ndd_deployement_error_total",
+	Help: "Number of times a deployement issue occured",
 })
 
 func init() {
@@ -60,8 +68,10 @@ func init() {
 		reconcileErrorCounter,
 		credentialsMissing,
 		credentialsInvalid,
-		unhandledCredentialsError,
+		unhandledError,
 		deviceDriverError,
+		networkDeviceError,
+		deploymentError,
 	)
 }
 

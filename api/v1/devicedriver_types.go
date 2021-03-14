@@ -36,11 +36,6 @@ const (
 type DeviceDriverSpec struct {
 	// Container defines the container parameters for the device driver
 	Container *corev1.Container `json:"container,omitempty"`
-	// Image defines the image to be used for the device driver
-	//Image string `json:"image,omitempty"`
-
-	// Resources define the resource requirements for the device driver
-	//Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // +kubebuilder:object:root=true

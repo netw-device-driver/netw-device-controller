@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -40,7 +39,7 @@ import (
 )
 
 const (
-	nnErrorRetryDelay = time.Second * 10
+	nnErrorRetryDelay = time.Minute * 10
 )
 
 func init() {
@@ -57,6 +56,7 @@ type NetworkNodeReconciler struct {
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups="",resources=pods,verbs=list;watch;get;patch;create;update;delete
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=list;watch;get
+// +kubebuilder:rbac:groups="",resources=events,verbs=list;watch;get;patch;create;update;delete
 // +kubebuilder:rbac:groups=ndd.henderiw.be,resources=devicedrivers,verbs=get;list;watch
 // +kubebuilder:rbac:groups=ndd.henderiw.be,resources=networkdevices,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ndd.henderiw.be,resources=networkdevices/status,verbs=get;update;patch
@@ -119,15 +119,17 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// The object is being deleted
 	if !nn.DeletionTimestamp.IsZero() && networkNodeFinalizer(nn) {
 
-		if nn.Status.OperationalStatus == nddv1.OperationalStatusUp {
+		if nn.Status.OperationalStatus != nil && *nn.Status.OperationalStatus == nddv1.OperationalStatusUp {
 			// only delete the ddriver deployment and networdevice object when operational status is down
 			if err = r.deleteNetworkDevice(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
 					// do nothing
 				} else {
 					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
-					return ctrl.Result{}, errors.Wrap(err,
-						fmt.Sprintf("failed to delete networkDevice"))
+					log.Info("failed to delete networkDevice")
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to delete networkDevice"))
 				}
 			}
 			// delete deployment
@@ -136,8 +138,10 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					// do nothing
 				} else {
 					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
-					return ctrl.Result{}, errors.Wrap(err,
-						fmt.Sprintf("failed to delete container"))
+					log.Info("failed to delete deployment")
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to delete deployment"))
 				}
 			}
 		}
@@ -159,71 +163,134 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// to the network node.
 	creds, err := r.buildAndValidateCredentials(ctx, req, nn)
 	if err != nil || creds == nil {
-		log.Info("credentials not available or invalid...")
-		nn.SetOperationalStatus(nddv1.OperationalStatusDown)
-		nn.SetErrorType(nddv1.CredentialError)
-		nn.SetUsedDeviceDriverSpec(nil)
-		nn.SetUsedNetworkNodeSpec(nil)
-		if err = r.saveNetworkNodeStatus(ctx, nn); err != nil {
-			return ctrl.Result{}, errors.Wrap(err,
-				fmt.Sprintf("failed to save networkNode status after credential check"))
+		if nn.Status.OperationalStatus != nil && *nn.Status.OperationalStatus == nddv1.OperationalStatusUp {
+			// only delete the ddriver deployment and networdevice object when operational status is down
+			if err = r.deleteNetworkDevice(ctx, nn); err != nil {
+				if k8serrors.IsNotFound(err) {
+					// do nothing
+				} else {
+					log.Info("failed to delete networkDevice")
+					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+					err = r.saveNetworkNodeStatus(ctx, nn)
+					if err != nil {
+						err = errors.Wrap(err, "failed to update error message")
+					}
+					//return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to delete networkDevice"))
+				}
+			}
+			// delete deployment
+			if err = r.deleteDeployment(ctx, nn); err != nil {
+				if k8serrors.IsNotFound(err) {
+					// do nothing
+				} else {
+					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+					log.Info("failed to delete deployment")
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to delete deployment"))
+				}
+			}
 		}
+		log.Info("credentials not available or invalid...")
 		return r.handleErrorResult(ctx, err, req, nn)
 	}
 
 	// retreive device driver information
 	c, err := r.buildAndValidateDeviceDriver(ctx, req, nn)
 	if err != nil || c == nil {
-		log.Info("device driver retrieval error...")
-		nn.SetOperationalStatus(nddv1.OperationalStatusDown)
-		nn.SetErrorType(nddv1.DeviceDriverError)
-		nn.SetUsedDeviceDriverSpec(nil)
-		nn.SetUsedNetworkNodeSpec(nil)
-		if err = r.saveNetworkNodeStatus(ctx, nn); err != nil {
-			return ctrl.Result{}, errors.Wrap(err,
-				fmt.Sprintf("failed to save networkNode status after device driver check"))
+		if nn.Status.OperationalStatus != nil && *nn.Status.OperationalStatus == nddv1.OperationalStatusUp {
+			// only delete the ddriver deployment and networdevice object when operational status is down
+			if err = r.deleteNetworkDevice(ctx, nn); err != nil {
+				if k8serrors.IsNotFound(err) {
+					// do nothing
+				} else {
+					log.Info("failed to delete networkDevice")
+					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+					err = r.saveNetworkNodeStatus(ctx, nn)
+					if err != nil {
+						err = errors.Wrap(err, "failed to update error message")
+					}
+
+					//return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to delete networkDevice"))
+				}
+			}
+			// delete deployment
+			if err = r.deleteDeployment(ctx, nn); err != nil {
+				if k8serrors.IsNotFound(err) {
+					// do nothing
+				} else {
+					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+					log.Info("failed to delete deployment")
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to delete deployment"))
+				}
+			}
 		}
+		log.Info("device driver retrieval error...")
 		return r.handleErrorResult(ctx, err, req, nn)
 	}
 
 	log.WithValues("ddinfo", c).Info("Device Driver information...")
 
-	if nn.Status.OperationalStatus != nddv1.OperationalStatusUp {
-		// only create the container when operational status is down
-		log.Info("Create Deployment and Network Device")
+	if nn.Status.OperationalStatus == nil {
+		// when the container was never initialized create it
+		log.Info("Create Deployment and Network Device when Operational status == nil")
 		if err = r.createNetworkDevice(ctx, nn); err != nil {
-			return ctrl.Result{}, errors.Wrap(err,
-				fmt.Sprintf("failed to create Network Device"))
+			log.Info("Failed to create Network Device...")
+			return r.handleErrorResult(ctx, err, req, nn)
+			//return ctrl.Result{}, errors.Wrap(err,
+			//	fmt.Sprintf("failed to create Network Device"))
 		}
 		if err = r.createDeployment(ctx, nn, c); err != nil {
-			return ctrl.Result{}, errors.Wrap(err,
-				fmt.Sprintf("failed to create deployemnt"))
+			log.Info("failed to create deployement")
+			return r.handleErrorResult(ctx, err, req, nn)
+			//return ctrl.Result{}, errors.Wrap(err,
+			//	fmt.Sprintf("failed to create deployemnt"))
 		}
 	} else {
-		if !reflect.DeepEqual(c, nn.Status.UsedDeviceDriverSpec.Container) || !reflect.DeepEqual(&nn.Spec, nn.Status.UsedNetworkNodeSpec) {
-			// Device Driver spec changes or Network node spec changes
-			log.Info("Update Deployment and Network Device after changes to device driver or networkNode spec")
-			if err = r.updateNetworkDevice(ctx, nn); err != nil {
-				return ctrl.Result{}, errors.Wrap(err,
-					fmt.Sprintf("failed to update Network Device"))
+		if *nn.Status.OperationalStatus != nddv1.OperationalStatusUp {
+			// only create the container when operational status is down
+			log.Info("Create Deployment and Network Device when Operational status != nil, we should never come here")
+			if err = r.createNetworkDevice(ctx, nn); err != nil {
+				log.Info("Failed to create Network Device...")
+				return r.handleErrorResult(ctx, err, req, nn)
+				//return ctrl.Result{}, errors.Wrap(err,
+				//	fmt.Sprintf("failed to create Network Device"))
 			}
-			if err = r.updateDeployment(ctx, nn, c); err != nil {
-				return ctrl.Result{}, errors.Wrap(err,
-					fmt.Sprintf("failed to update deployment"))
+			if err = r.createDeployment(ctx, nn, c); err != nil {
+				log.Info("failed to create deployement")
+				return r.handleErrorResult(ctx, err, req, nn)
+				//return ctrl.Result{}, errors.Wrap(err,
+				//	fmt.Sprintf("failed to create deployemnt"))
+			}
+		} else {
+			if !reflect.DeepEqual(c, nn.Status.UsedDeviceDriverSpec.Container) || !reflect.DeepEqual(&nn.Spec, nn.Status.UsedNetworkNodeSpec) {
+				// Device Driver spec changes or Network node spec changes
+				log.Info("Update Deployment and Network Device after changes to device driver or networkNode spec")
+				if err = r.updateNetworkDevice(ctx, nn); err != nil {
+					log.Info("Failed to update Network Device...")
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to update Network Device"))
+				}
+				if err = r.updateDeployment(ctx, nn, c); err != nil {
+					log.Info("failed to update deployement")
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to update deployment"))
+				}
 			}
 		}
 	}
 
 	log.Info("deployment created or updated and running...")
-	nn.SetOperationalStatus(nddv1.OperationalStatusUp)
-	nn.SetUsedDeviceDriverSpec(c)
-	nn.SetUsedNetworkNodeSpec(&nn.Spec)
-	if err = r.saveNetworkNodeStatus(ctx, nn); err != nil {
-		return ctrl.Result{}, errors.Wrap(err,
-			fmt.Sprintf("failed to save networkNode status after container creation"))
-	}
 
-	return ctrl.Result{}, nil
+	return r.handleOKResult(ctx, nn, c)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -267,7 +334,7 @@ func (r *NetworkNodeReconciler) DeviceDriverMapFunc(o client.Object) []ctrl.Requ
 		// only enqueue if the network node device driver kind matches with the device driver label
 		for k, v := range dd.GetLabels() {
 			if k == "ddriver-kind" {
-				if string(n.Spec.DeviceDriver.Kind) == v {
+				if string(*n.Spec.DeviceDriver.Kind) == v {
 					name := client.ObjectKey{
 						Namespace: n.GetNamespace(),
 						Name:      n.GetName(),
@@ -281,58 +348,127 @@ func (r *NetworkNodeReconciler) DeviceDriverMapFunc(o client.Object) []ctrl.Requ
 	return result
 }
 
-// Make sure the credentials for the network node are valid
-func (r *NetworkNodeReconciler) buildAndValidateCredentials(ctx context.Context, req ctrl.Request, nn *nddv1.NetworkNode) (creds *Credentials, err error) {
-	// Retrieve the secret from Kubernetes for this network node
-	credsSecret, err := r.getSecret(ctx, req, nn)
-	if err != nil {
-		return nil, err
+func (r *NetworkNodeReconciler) handleOKResult(ctx context.Context, nn *nddv1.NetworkNode, c *corev1.Container) (ctrl.Result, error) {
+	saveErr := r.setOKCondition(ctx, nn, c)
+	if saveErr != nil {
+		return ctrl.Result{Requeue: true}, saveErr
 	}
-
-	// Check if address is defined on the network node
-	if nn.Spec.Target.Address == "" {
-		return nil, &EmptyTargetAddressError{message: "Missing Target connection detail 'Address'"}
-	}
-
-	// TODO we could validate the address format
-
-	creds = &Credentials{
-		Username: strings.TrimSuffix(string(credsSecret.Data["username"]), "\n"),
-		Password: strings.TrimSuffix(string(credsSecret.Data["password"]), "\n"),
-	}
-
-	// Verify that the secret contains the expected info.
-	err = creds.Validate()
-	if err != nil {
-		return nil, err
-	}
-
-	return creds, nil
+	return ctrl.Result{}, nil
 }
 
-// Retrieve the secret containing the credentials for talking to the Network Node.
-func (r *NetworkNodeReconciler) getSecret(ctx context.Context, request ctrl.Request, nn *nddv1.NetworkNode) (credsSecret *corev1.Secret, err error) {
+func (r *NetworkNodeReconciler) setOKCondition(ctx context.Context, nn *nddv1.NetworkNode, c *corev1.Container) (err error) {
+	nn.SetOperationalStatus(nddv1.OperationalStatusUp)
+	nn.SetErrorType(nddv1.NoneError)
+	nn.SetErrorMessage(stringPtr(""))
+	nn.SetUsedDeviceDriverSpec(c)
+	nn.SetUsedNetworkNodeSpec(&nn.Spec)
+	nn.Status.ErrorCount = intPtr(0)
 
-	if nn.Spec.Target.CredentialsName == "" {
-		return nil, &EmptyTargetSecretError{message: "The Target secret reference is empty"}
-	}
-	secretKey := nn.CredentialsKey()
-	credsSecret = &corev1.Secret{}
-	err = r.Client.Get(ctx, secretKey, credsSecret)
+	err = r.saveNetworkNodeStatus(ctx, nn)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil, &ResolveTargetSecretRefError{message: fmt.Sprintf("The Target secret %s does not exist", secretKey)}
+		err = errors.Wrap(err, "failed to update OK status")
+	}
+
+	return
+}
+
+func (r *NetworkNodeReconciler) handleErrorResult(ctx context.Context, err error, req ctrl.Request, nn *nddv1.NetworkNode) (ctrl.Result, error) {
+
+	switch err.(type) {
+	// In the event a deployment issue
+	// we requeue the network node to handle the issue in the future.
+	case *CreateDeploymentError, *UpdateDeploymentError,
+		*DeleteDeploymentError:
+
+		deploymentError.Inc()
+		saveErr := r.setErrorCondition(ctx, req, nn, nddv1.DeviceDriverError, err.Error())
+		if saveErr != nil {
+			return ctrl.Result{Requeue: true}, saveErr
 		}
-		return nil, err
-	}
+		r.publishEvent(ctx, req, nn.NewEvent("DeploymentError", err.Error()))
 
-	return credsSecret, nil
+		//return ctrl.Result{Requeue: true, RequeueAfter: nnErrorRetryDelay}, nil
+		return ctrl.Result{}, errors.Wrap(err, "DeploymentError")
+
+	// In the event a network device issue
+	// we requeue the network node to handle the issue in the future.
+	case *CreateNetworkDeviceError, *UpdateNetworkDeviceError,
+		*GetNetworkDeviceError, *DeleteNetworkDeviceError,
+		*SaveNetworkDeviceError:
+
+		networkDeviceError.Inc()
+		saveErr := r.setErrorCondition(ctx, req, nn, nddv1.DeviceDriverError, err.Error())
+		if saveErr != nil {
+			return ctrl.Result{Requeue: true}, saveErr
+		}
+		r.publishEvent(ctx, req, nn.NewEvent("DeviceDriverError", err.Error()))
+
+		//return ctrl.Result{Requeue: true, RequeueAfter: nnErrorRetryDelay}, nil
+		return ctrl.Result{}, errors.Wrap(err, "DeviceDriverError")
+	// In the event a device driver retrieval issue
+	// we requeue the network node to handle the issue in the future.
+	case *ResolveDeviceDriverRefError:
+		deviceDriverError.Inc()
+		saveErr := r.setErrorCondition(ctx, req, nn, nddv1.DeviceDriverError, err.Error())
+		if saveErr != nil {
+			return ctrl.Result{Requeue: true}, saveErr
+		}
+		r.publishEvent(ctx, req, nn.NewEvent("DeviceDriverError", err.Error()))
+
+		//return ctrl.Result{Requeue: true, RequeueAfter: nnErrorRetryDelay}, nil
+		return ctrl.Result{}, errors.Wrap(err, "DeviceDriverError")
+
+	// In the event a credential secret is defined, but we cannot find it
+	// we requeue the network node as we will not know if they create the secret
+	// at some point in the future.
+	case *ResolveTargetSecretRefError:
+		credentialsMissing.Inc()
+		saveErr := r.setErrorCondition(ctx, req, nn, nddv1.CredentialError, err.Error())
+		if saveErr != nil {
+			return ctrl.Result{Requeue: true}, saveErr
+		}
+		r.publishEvent(ctx, req, nn.NewEvent("TargetCredentialError", err.Error()))
+
+		//return ctrl.Result{Requeue: true, RequeueAfter: nnErrorRetryDelay}, nil
+		return ctrl.Result{}, errors.Wrap(err, "TargetCredentialError")
+
+	// If a Network Node is missing a Target address or secret, or
+	// we have found the secret but it is missing the required fields,
+	// or the Target address is defined but malformed, we set the
+	// network node into an error state but we do not Requeue it
+	// as fixing the secret or the Network Node info will trigger
+	// the Network Node to be reconciled again
+	case *EmptyTargetAddressError, *EmptyTargetSecretError,
+		*CredentialsValidationError:
+		credentialsInvalid.Inc()
+		saveErr := r.setErrorCondition(ctx, req, nn, nddv1.CredentialError, err.Error())
+		if saveErr != nil {
+			return ctrl.Result{Requeue: true}, saveErr
+		}
+		// Only publish the event if we do not have an error
+		// after saving so that we only publish one time.
+		r.publishEvent(ctx, req, nn.NewEvent("TargetCredentialError", err.Error()))
+		return ctrl.Result{}, nil
+	default:
+		unhandledError.Inc()
+		return ctrl.Result{}, errors.Wrap(err, "An unhandled failure occurred")
+	}
 }
 
-func (r *NetworkNodeReconciler) setErrorCondition(ctx context.Context, request ctrl.Request, nn *nddv1.NetworkNode, errType nddv1.ErrorType, message string) (err error) {
-	logger := r.Log.WithValues("networknode", request.NamespacedName)
+func (r *NetworkNodeReconciler) setErrorCondition(ctx context.Context, req ctrl.Request, nn *nddv1.NetworkNode, errType nddv1.ErrorType, message string) (err error) {
+	logger := r.Log.WithValues("networknode", req.NamespacedName)
 
-	setErrorMessage(nn, errType, message)
+	nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+	nn.SetErrorType(errType)
+	nn.SetErrorMessage(&message)
+	nn.SetUsedDeviceDriverSpec(nil)
+	nn.SetUsedNetworkNodeSpec(nil)
+	if nn.Status.ErrorCount == nil {
+		nn.Status.ErrorCount = new(int)
+		*nn.Status.ErrorCount++
+	} else {
+		*nn.Status.ErrorCount++
+	}
 
 	logger.Info(
 		"adding error message",
@@ -346,13 +482,15 @@ func (r *NetworkNodeReconciler) setErrorCondition(ctx context.Context, request c
 	return
 }
 
-// setErrorMessage updates the ErrorMessage in the network Node Status struct
-// and increases the ErrorCount
-func setErrorMessage(nn *nddv1.NetworkNode, errType nddv1.ErrorType, message string) {
-	nn.Status.OperationalStatus = nddv1.OperationalStatusDown
-	nn.Status.ErrorType = errType
-	nn.Status.ErrorMessage = message
-	nn.Status.ErrorCount++
+func (r *NetworkNodeReconciler) publishEvent(ctx context.Context, req ctrl.Request, event corev1.Event) {
+	rLogger := r.Log.WithValues("networknode", req.NamespacedName)
+	rLogger.Info("publishing event", "reason", event.Reason, "message", event.Message)
+	err := r.Client.Create(ctx, &event)
+	if err != nil {
+		rLogger.Info("failed to record event, ignoring",
+			"reason", event.Reason, "message", event.Message, "error", err)
+	}
+	return
 }
 
 func (r *NetworkNodeReconciler) saveNetworkNodeStatus(ctx context.Context, nn *nddv1.NetworkNode) error {
@@ -368,65 +506,6 @@ func (r *NetworkNodeReconciler) saveNetworkNodeStatus(ctx context.Context, nn *n
 		return err
 	}
 	return nil
-}
-
-func (r *NetworkNodeReconciler) handleErrorResult(ctx context.Context, err error, request ctrl.Request, nn *nddv1.NetworkNode) (ctrl.Result, error) {
-	switch err.(type) {
-	// In the event a device driver retrieval issue
-	// we requeue the network node to handle the issue in the future.
-	case *ResolveDeviceDriverRefError:
-		deviceDriverError.Inc()
-		saveErr := r.setErrorCondition(ctx, request, nn, nddv1.DeviceDriverError, err.Error())
-		if saveErr != nil {
-			return ctrl.Result{Requeue: true}, saveErr
-		}
-		r.publishEvent(ctx, request, nn.NewEvent("DeviceDriverError", err.Error()))
-
-		return ctrl.Result{Requeue: true, RequeueAfter: nnErrorRetryDelay}, nil
-	// In the event a credential secret is defined, but we cannot find it
-	// we requeue the network node as we will not know if they create the secret
-	// at some point in the future.
-	case *ResolveTargetSecretRefError:
-		credentialsMissing.Inc()
-		saveErr := r.setErrorCondition(ctx, request, nn, nddv1.CredentialError, err.Error())
-		if saveErr != nil {
-			return ctrl.Result{Requeue: true}, saveErr
-		}
-		r.publishEvent(ctx, request, nn.NewEvent("TargetCredentialError", err.Error()))
-
-		return ctrl.Result{Requeue: true, RequeueAfter: nnErrorRetryDelay}, nil
-	// If a Network Node is missing a Target address or secret, or
-	// we have found the secret but it is missing the required fields,
-	// or the Target address is defined but malformed, we set the
-	// network node into an error state but we do not Requeue it
-	// as fixing the secret or the Network Node info will trigger
-	// the Network Node to be reconciled again
-	case *EmptyTargetAddressError, *EmptyTargetSecretError,
-		*CredentialsValidationError:
-		credentialsInvalid.Inc()
-		saveErr := r.setErrorCondition(ctx, request, nn, nddv1.CredentialError, err.Error())
-		if saveErr != nil {
-			return ctrl.Result{Requeue: true}, saveErr
-		}
-		// Only publish the event if we do not have an error
-		// after saving so that we only publish one time.
-		r.publishEvent(ctx, request, nn.NewEvent("TargetCredentialError", err.Error()))
-		return ctrl.Result{}, nil
-	default:
-		unhandledCredentialsError.Inc()
-		return ctrl.Result{}, errors.Wrap(err, "An unhandled failure occurred with the Target secret")
-	}
-}
-
-func (r *NetworkNodeReconciler) publishEvent(ctx context.Context, request ctrl.Request, event corev1.Event) {
-	rLogger := r.Log.WithValues("networknode", request.NamespacedName)
-	rLogger.Info("publishing event", "reason", event.Reason, "message", event.Message)
-	err := r.Client.Create(ctx, &event)
-	if err != nil {
-		rLogger.Info("failed to record event, ignoring",
-			"reason", event.Reason, "message", event.Message, "error", err)
-	}
-	return
 }
 
 func networkNodeFinalizer(p *nddv1.NetworkNode) bool {
