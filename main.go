@@ -113,9 +113,10 @@ func main() {
 	ctx := ctrl.SetupSignalHandler()
 
 	if err = (&controllers.NetworkNodeReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("NetworkNode"),
-		Scheme: mgr.GetScheme(),
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("NetworkNode"),
+		Scheme:    mgr.GetScheme(),
+		Namespace: os.Getenv("MY_POD_NAMESPACE"),
 	}).SetupWithManager(ctx, mgr, concurrency(nddConcurrency)); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NetworkNode")
 		os.Exit(1)

@@ -17,14 +17,31 @@ limitations under the License.
 package v1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NetworkDeviceSpec defines the desired state of NetworkDevice
 type NetworkDeviceSpec struct {
-	// Target defines how we connect to the network node
-	Target TargetDetails `json:"target,omitempty"`
+	// Address defines how we connect to the network node
+	Address string `json:"address,omitempty"`
+}
+
+// DeviceDetails collects information about the deiscovered device
+type DeviceDetails struct {
+	// Host name
+	HostName string `json:"hostname,omitempty"`
+
+	// the Kind of hardware
+	Kind string `json:"kind,omitempty"`
+
+	// SW version
+	SwVersion string `json:"swVersion,omitempty"`
+
+	// the Mac address of the hardware
+	MacAddress string `json:"macAddress,omitempty"`
+
+	// the Serial Number of the hardware
+	SerialNumber string `json:"serialNumber,omitempty"`
 }
 
 // DiscoveryStatus defines the states the device driver will report
@@ -44,64 +61,21 @@ const (
 
 	// DiscoveryStatusReady means the networkDevice can be consumed
 	DiscoveryStatusReady DiscoveryStatus = "Ready"
-
-	// DiscoveryStatusDeleting means we are in the process of cleaning up the networkDevice
-	// ready for deletion
-	DiscoveryStatusDeleting DiscoveryStatus = "Deleting"
 )
-
-// CredentialsStatus contains the reference and version of the last
-// set of credentials the controller was able to validate.
-type CredentialsStatus struct {
-	Reference *corev1.SecretReference `json:"credentials,omitempty"`
-	Version   string                  `json:"credentialsVersion,omitempty"`
-}
-
-// HardwareDetails collects all of the information about hardware
-// discovered on the Network Node.
-type HardwareDetails struct {
-	// the Kind of hardware
-	Kind string `json:"kind,omitempty"`
-	// the Mac address of the hardware
-	MacAddress string `json:"macAddress,omitempty"`
-	// the Serial Number of the hardware
-	SerialNumber string `json:"serialNumber,omitempty"`
-}
 
 // NetworkDeviceStatus defines the observed state of NetworkDevice
 type NetworkDeviceStatus struct {
+	// The discovered DeviceDetails
+	DeviceDetails DeviceDetails `json:"hardwareDetails,omitempty"`
+
 	// DiscoveryStatus holds the discovery status of the networkNode
-	// +kubebuilder:validation:Enum="";Enabled;Disabled;Discovery;Deleting
+	// +kubebuilder:validation:Enum="";Ready;Not Ready;Discovery
+	// +kubebuilder:default:="Not Ready"
 	DiscoveryStatus DiscoveryStatus `json:"discoveryStatus"`
-
-	// OperationalStatus holds the operational status of the networkNode
-	// +kubebuilder:validation:Enum="";Up;Down
-	OperationalStatus OperationalStatus `json:"operationalStatus"`
-
-	// ErrorType indicates the type of failure encountered when the
-	// OperationalStatus is OperationalStatusDown
-	// +kubebuilder:validation:Enum="";target error;credential error;discovery error;provisioning error
-	ErrorType ErrorType `json:"errorType,omitempty"`
 
 	// LastUpdated identifies when this status was last observed.
 	// +optional
 	LastUpdated *metav1.Time `json:"lastUpdated,omitempty"`
-
-	// The HardwareDetails discovered on the Network Node.
-	HardwareDetails HardwareDetails `json:"hardwareDetails,omitempty"`
-
-	// the last credentials we were able to validate as working
-	GoodCredentials CredentialsStatus `json:"goodCredentials,omitempty"`
-
-	// the last credentials we sent to the provisioning backend
-	TriedCredentials CredentialsStatus `json:"triedCredentials,omitempty"`
-
-	// the last error message reported by the provisioning subsystem
-	ErrorMessage string `json:"errorMessage"`
-
-	// ErrorCount records how many times the host has encoutered an error since the last successful operation
-	// +kubebuilder:default:=0
-	ErrorCount int `json:"errorCount"`
 }
 
 // +kubebuilder:object:root=true

@@ -98,15 +98,19 @@ type ErrorType string
 const (
 	// NoneError is an error type when no error exists
 	NoneError ErrorType = ""
+
 	// TargetError is an error condition occurring when the
 	// target supplied are not correct or not existing
 	TargetError ErrorType = "target error"
+
 	// CredentialError is an error condition occurring when the
 	// credentials supplied are not correct or not existing
 	CredentialError ErrorType = "credential error"
+
 	// ContainerError is an error condition occuring when the controller
 	// fails to provision or deprovision the ddriver container.
 	ContainerError ErrorType = "container error"
+
 	// DeviceDriverError is an error condition occuring when the controller
 	// fails to retrieve the ddriver information.
 	DeviceDriverError ErrorType = "device driver error"
@@ -116,11 +120,13 @@ const (
 type NetworkNodeStatus struct {
 	// OperationalStatus holds the operational status of the networkNode
 	// +kubebuilder:validation:Enum="";Up;Down
+	// +kubebuilder:default:=Down
 	OperationalStatus OperationalStatus `json:"operationalStatus"`
 
 	// ErrorType indicates the type of failure encountered when the
 	// OperationalStatus is OperationalStatusDown
 	// +kubebuilder:validation:Enum="";target error;credential error;container error;device driver error
+	// +kubebuilder:default:=""
 	ErrorType ErrorType `json:"errorType,omitempty"`
 
 	// LastUpdated identifies when this status was last observed.
@@ -132,6 +138,7 @@ type NetworkNodeStatus struct {
 	ErrorCount int `json:"errorCount"`
 
 	// the last error message reported by the provisioning subsystem
+	// +kubebuilder:default:=""
 	ErrorMessage string `json:"errorMessage"`
 
 	// UsedNetworkNodeSpec identifies the used networkNode spec when operational state up
@@ -201,7 +208,10 @@ func (nn *NetworkNode) SetUsedNetworkNodeSpec(nnSpec *NetworkNodeSpec) {
 }
 
 // SetUsedDeviceDriverSpec updates the used device driver spec
-func (nn *NetworkNode) SetUsedDeviceDriverSpec(ddSpec *DeviceDriverSpec) {
+func (nn *NetworkNode) SetUsedDeviceDriverSpec(c *corev1.Container) {
+	ddSpec := &DeviceDriverSpec{
+		Container: c,
+	}
 	nn.Status.UsedDeviceDriverSpec = ddSpec
 
 }

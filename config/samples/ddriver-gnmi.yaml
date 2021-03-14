@@ -5,12 +5,16 @@ metadata:
   labels:
     ddriver-kind: gnmi
 spec:
-  # Add fields here
-  image: henderiw/nats-netwdevicedriver:latest
-  resources:
-    requests:
-        memory: "64Mi"
-        cpu: "30m"
-    limits:
-      memory: "256Mi"
-      cpu: "250m"
+  container:
+    name: gnmi-ddriver
+    image: henderiw/netwdevicedriver-gnmi:latest
+    imagePullPolicy: Always
+    command:
+      - /netwdevicedriver-gnmi
+    resources:
+      requests:
+          memory: "64Mi"
+          cpu: "30m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
