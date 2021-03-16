@@ -121,19 +121,24 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		if nn.Status.OperationalStatus != nil && *nn.Status.OperationalStatus == nddv1.OperationalStatusUp {
 			// only delete the ddriver deployment and networdevice object when operational status is down
-			if err = r.deleteNetworkDevice(ctx, nn); err != nil {
+			if err := r.deleteNetworkDevice(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
 					// do nothing
 				} else {
 					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
-					log.Info("failed to delete networkDevice")
-					return r.handleErrorResult(ctx, err, req, nn)
+					r.Log.Info("failed to delete networkDevice",
+						"Error", err)
+					err = r.saveNetworkNodeStatus(ctx, nn)
+					if err != nil {
+						err = errors.Wrap(err, "failed to update error message")
+					}
+					//return r.handleErrorResult(ctx, err, req, nn)
 					//return ctrl.Result{}, errors.Wrap(err,
 					//	fmt.Sprintf("failed to delete networkDevice"))
 				}
 			}
 			// delete deployment
-			if err = r.deleteDeployment(ctx, nn); err != nil {
+			if err := r.deleteDeployment(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
 					// do nothing
 				} else {
@@ -165,12 +170,14 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if err != nil || creds == nil {
 		if nn.Status.OperationalStatus != nil && *nn.Status.OperationalStatus == nddv1.OperationalStatusUp {
 			// only delete the ddriver deployment and networdevice object when operational status is down
-			if err = r.deleteNetworkDevice(ctx, nn); err != nil {
+			if err := r.deleteNetworkDevice(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
 					// do nothing
 				} else {
 					log.Info("failed to delete networkDevice")
 					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+					r.Log.Info("failed to delete networkDevice",
+						"Error", err)
 					err = r.saveNetworkNodeStatus(ctx, nn)
 					if err != nil {
 						err = errors.Wrap(err, "failed to update error message")
@@ -181,12 +188,14 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 			}
 			// delete deployment
-			if err = r.deleteDeployment(ctx, nn); err != nil {
+			if err := r.deleteDeployment(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
 					// do nothing
 				} else {
 					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
 					log.Info("failed to delete deployment")
+					r.Log.Info("failed to delete networkDevice",
+						"Error", err)
 					return r.handleErrorResult(ctx, err, req, nn)
 					//return ctrl.Result{}, errors.Wrap(err,
 					//	fmt.Sprintf("failed to delete deployment"))
@@ -202,7 +211,7 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if err != nil || c == nil {
 		if nn.Status.OperationalStatus != nil && *nn.Status.OperationalStatus == nddv1.OperationalStatusUp {
 			// only delete the ddriver deployment and networdevice object when operational status is down
-			if err = r.deleteNetworkDevice(ctx, nn); err != nil {
+			if err := r.deleteNetworkDevice(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
 					// do nothing
 				} else {
@@ -219,7 +228,7 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				}
 			}
 			// delete deployment
-			if err = r.deleteDeployment(ctx, nn); err != nil {
+			if err := r.deleteDeployment(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
 					// do nothing
 				} else {

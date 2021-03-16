@@ -101,20 +101,25 @@ func (r *NetworkNodeReconciler) updateNetworkDevice(ctx context.Context, nn *ndd
 
 // deleteNetworkDevice function
 func (r *NetworkNodeReconciler) deleteNetworkDevice(ctx context.Context, nn *nddv1.NetworkNode) error {
-	nd := &nddv1.NetworkDevice{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      nn.Name,
-			Namespace: nn.Namespace,
-			Labels: map[string]string{
-				"netwDevice": nn.Name,
-			},
-		},
+	nd := &nddv1.NetworkDevice{}
+	ndKey := types.NamespacedName{
+		Name:      nn.Name,
+		Namespace: nn.Namespace,
 	}
-	err := r.Delete(ctx, nd)
-	if !k8serrors.IsNotFound(err) {
-		return &DeleteNetworkDeviceError{message: fmt.Sprintf("Failed to delete Network Device: %s", err)}
+	if err := r.Get(ctx, ndKey, nd); err != nil {
+		return &GetNetworkDeviceError{message: fmt.Sprintf("Failed to get Network Device: %s", err)}
 		//return err
 	}
+	nd.DeepCopy()
+	r.Log.WithValues("network-device", nd).Info("network device delete information")
+	if err := r.Delete(ctx, nd); err != nil {
+		if k8serrors.IsNotFound(err) {
+			// do nothing
+		} else {
+			return &DeleteNetworkDeviceError{message: fmt.Sprintf("Failed to delete Network Device: %s", err)}
+		}
+	}
+
 	r.Log.WithValues("NetworkDevice Object", nd).Info("deleted networkDevice...")
 	return nil
 }
