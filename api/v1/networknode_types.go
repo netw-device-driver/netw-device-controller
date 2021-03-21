@@ -66,13 +66,22 @@ type DeviceDriverDetails struct {
 	Kind *DeviceDriverKind `json:"kind"`
 }
 
+type GrpcServerDetails struct {
+	// Port defines the port of the GRPC server for the device driver
+	// +kubebuilder:default:=9999
+	Port *int `json:"port"`
+}
+
 // NetworkNodeSpec defines the desired state of NetworkNode
 type NetworkNodeSpec struct {
 	// Target defines how we connect to the network node
 	Target *TargetDetails `json:"target,omitempty"`
 
 	// DeviceDriver defines the device driver details to connect to the network node
-	DeviceDriver *DeviceDriverDetails `json:"device-driver,omitempty"`
+	DeviceDriver *DeviceDriverDetails `json:"deviceDriver,omitempty"`
+
+	// GrpcServerPort defines the grpc server port
+	GrpcServer *GrpcServerDetails `json:"grpcServer,omitempty"`
 }
 
 // OperationalStatus represents the state of the network node

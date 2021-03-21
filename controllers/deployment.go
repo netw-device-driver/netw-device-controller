@@ -150,12 +150,21 @@ func (r *NetworkNodeReconciler) buildAndValidateDeviceDriver(ctx context.Context
 	if c == nil {
 		r.Log.Info("Using the default device driver configuration")
 		// apply the default settings
-		env := corev1.EnvVar{
+		envNameSpace := corev1.EnvVar{
 			Name: "MY_POD_NAMESPACE",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					APIVersion: "v1",
 					FieldPath:  "metadata.namespace",
+				},
+			},
+		}
+		envPodIP := corev1.EnvVar{
+			Name: "POD_IP",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "status.podIP",
 				},
 			},
 		}
@@ -165,11 +174,13 @@ func (r *NetworkNodeReconciler) buildAndValidateDeviceDriver(ctx context.Context
 			ImagePullPolicy: corev1.PullAlways,
 			//ImagePullPolicy: corev1.PullIfNotPresent,
 			Args: []string{
-				"--nats-server=nats.default.svc.cluster.local",
+				//"--nats-server=nats.default.svc.cluster.local",
+				"--cache-server-address=localhost:" + fmt.Sprintf("%d", *nn.Spec.GrpcServer.Port),
 				"--device-name=" + fmt.Sprintf("%s", nn.Name),
 			},
 			Env: []corev1.EnvVar{
-				env,
+				envNameSpace,
+				envPodIP,
 			},
 			Command: []string{
 				"/netwdevicedriver-gnmi",
@@ -188,7 +199,7 @@ func (r *NetworkNodeReconciler) buildAndValidateDeviceDriver(ctx context.Context
 	} else {
 		r.Log.Info("Using the specific device driver configuration")
 		// update the argument/environment information, since this is specific for the container deployment
-		env := corev1.EnvVar{
+		envNameSpace := corev1.EnvVar{
 			Name: "MY_POD_NAMESPACE",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
@@ -197,12 +208,23 @@ func (r *NetworkNodeReconciler) buildAndValidateDeviceDriver(ctx context.Context
 				},
 			},
 		}
+		envPodIP := corev1.EnvVar{
+			Name: "POD_IP",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "status.podIP",
+				},
+			},
+		}
 		c.Args = []string{
-			"--nats-server=nats.default.svc.cluster.local",
+			//"--nats-server=nats.default.svc.cluster.local",
+			"--cache-server-address=localhost:" + fmt.Sprintf("%d", *nn.Spec.GrpcServer.Port),
 			"--device-name=" + fmt.Sprintf("%s", nn.Name),
 		}
 		c.Env = []corev1.EnvVar{
-			env,
+			envNameSpace,
+			envPodIP,
 		}
 	}
 	return c, nil

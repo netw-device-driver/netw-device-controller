@@ -16,7 +16,28 @@ spec:
     singular: networkdevice
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Discovery status
+      jsonPath: .status.discoveryStatus
+      name: discoveryStatus
+      type: string
+    - description: Kind of device
+      jsonPath: .status.deviceDetails.kind
+      name: Kind
+      type: string
+    - description: SW version of the device
+      jsonPath: .status.deviceDetails.swVersion
+      name: SwVersion
+      type: string
+    - description: macAddress of the device
+      jsonPath: .status.deviceDetails.macAddress
+      name: MacAddress
+      type: string
+    - description: serialNumber of the device
+      jsonPath: .status.deviceDetails.serialNumber
+      name: serialNumber
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: NetworkDevice is the Schema for the networkdevices API
@@ -43,16 +64,7 @@ spec:
           status:
             description: NetworkDeviceStatus defines the observed state of NetworkDevice
             properties:
-              discoveryStatus:
-                default: Not Ready
-                description: DiscoveryStatus holds the discovery status of the networkNode
-                enum:
-                - ""
-                - Ready
-                - Not Ready
-                - Discovery
-                type: string
-              hardwareDetails:
+              deviceDetails:
                 description: The discovered DeviceDetails
                 properties:
                   hostname:
@@ -71,6 +83,15 @@ spec:
                     description: SW version
                     type: string
                 type: object
+              discoveryStatus:
+                default: Not Ready
+                description: DiscoveryStatus holds the discovery status of the networkNode
+                enum:
+                - ""
+                - Ready
+                - Not Ready
+                - Discovery
+                type: string
               lastUpdated:
                 description: LastUpdated identifies when this status was last observed.
                 format: date-time

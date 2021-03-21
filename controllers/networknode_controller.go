@@ -54,6 +54,7 @@ type NetworkNodeReconciler struct {
 }
 
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups="",resources=pods,verbs=list;watch;get;patch;create;update;delete
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=list;watch;get
 // +kubebuilder:rbac:groups="",resources=events,verbs=list;watch;get;patch;create;update;delete
@@ -137,6 +138,20 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					//	fmt.Sprintf("failed to delete networkDevice"))
 				}
 			}
+			// delete service
+			if err := r.deleteService(ctx, nn); err != nil {
+				if k8serrors.IsNotFound(err) {
+					// do nothing
+				} else {
+					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+					log.Info("failed to delete deployment")
+					r.Log.Info("failed to delete networkDevice",
+						"Error", err)
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to delete deployment"))
+				}
+			}
 			// delete deployment
 			if err := r.deleteDeployment(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
@@ -187,6 +202,20 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					//	fmt.Sprintf("failed to delete networkDevice"))
 				}
 			}
+			// delete service
+			if err := r.deleteService(ctx, nn); err != nil {
+				if k8serrors.IsNotFound(err) {
+					// do nothing
+				} else {
+					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+					log.Info("failed to delete deployment")
+					r.Log.Info("failed to delete networkDevice",
+						"Error", err)
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to delete deployment"))
+				}
+			}
 			// delete deployment
 			if err := r.deleteDeployment(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
@@ -227,6 +256,20 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					//	fmt.Sprintf("failed to delete networkDevice"))
 				}
 			}
+			// delete service
+			if err := r.deleteService(ctx, nn); err != nil {
+				if k8serrors.IsNotFound(err) {
+					// do nothing
+				} else {
+					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+					log.Info("failed to delete deployment")
+					r.Log.Info("failed to delete networkDevice",
+						"Error", err)
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to delete deployment"))
+				}
+			}
 			// delete deployment
 			if err := r.deleteDeployment(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
@@ -255,6 +298,12 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			//return ctrl.Result{}, errors.Wrap(err,
 			//	fmt.Sprintf("failed to create Network Device"))
 		}
+		if err = r.createService(ctx, nn); err != nil {
+			log.Info("failed to create service")
+			return r.handleErrorResult(ctx, err, req, nn)
+			//return ctrl.Result{}, errors.Wrap(err,
+			//	fmt.Sprintf("failed to create deployemnt"))
+		}
 		if err = r.createDeployment(ctx, nn, c); err != nil {
 			log.Info("failed to create deployement")
 			return r.handleErrorResult(ctx, err, req, nn)
@@ -271,6 +320,12 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				//return ctrl.Result{}, errors.Wrap(err,
 				//	fmt.Sprintf("failed to create Network Device"))
 			}
+			if err = r.createService(ctx, nn); err != nil {
+				log.Info("failed to create service")
+				return r.handleErrorResult(ctx, err, req, nn)
+				//return ctrl.Result{}, errors.Wrap(err,
+				//	fmt.Sprintf("failed to create deployemnt"))
+			}
 			if err = r.createDeployment(ctx, nn, c); err != nil {
 				log.Info("failed to create deployement")
 				return r.handleErrorResult(ctx, err, req, nn)
@@ -286,6 +341,12 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 					return r.handleErrorResult(ctx, err, req, nn)
 					//return ctrl.Result{}, errors.Wrap(err,
 					//	fmt.Sprintf("failed to update Network Device"))
+				}
+				if err = r.updateService(ctx, nn); err != nil {
+					log.Info("failed to create service")
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to create deployemnt"))
 				}
 				if err = r.updateDeployment(ctx, nn, c); err != nil {
 					log.Info("failed to update deployement")

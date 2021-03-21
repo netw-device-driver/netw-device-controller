@@ -36,7 +36,7 @@ spec:
           spec:
             description: NetworkNodeSpec defines the desired state of NetworkNode
             properties:
-              device-driver:
+              deviceDriver:
                 description: DeviceDriver defines the device driver details to connect
                   to the network node
                 properties:
@@ -46,6 +46,17 @@ spec:
                     type: string
                 required:
                 - kind
+                type: object
+              grpcServer:
+                description: GrpcServerPort defines the grpc server port
+                properties:
+                  port:
+                    default: 9999
+                    description: Port defines the port of the GRPC server for the
+                      device driver
+                    type: integer
+                required:
+                - port
                 type: object
               target:
                 description: Target defines how we connect to the network node
@@ -1219,7 +1230,7 @@ spec:
                 description: UsedNetworkNodeSpec identifies the used networkNode spec
                   when operational state up
                 properties:
-                  device-driver:
+                  deviceDriver:
                     description: DeviceDriver defines the device driver details to
                       connect to the network node
                     properties:
@@ -1229,6 +1240,17 @@ spec:
                         type: string
                     required:
                     - kind
+                    type: object
+                  grpcServer:
+                    description: GrpcServerPort defines the grpc server port
+                    properties:
+                      port:
+                        default: 9999
+                        description: Port defines the port of the GRPC server for
+                          the device driver
+                        type: integer
+                    required:
+                    - port
                     type: object
                   target:
                     description: Target defines how we connect to the network node

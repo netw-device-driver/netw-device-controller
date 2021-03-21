@@ -787,7 +787,28 @@ spec:
     singular: networkdevice
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Discovery status
+      jsonPath: .status.discoveryStatus
+      name: discoveryStatus
+      type: string
+    - description: Kind of device
+      jsonPath: .status.deviceDetails.kind
+      name: Kind
+      type: string
+    - description: SW version of the device
+      jsonPath: .status.deviceDetails.swVersion
+      name: SwVersion
+      type: string
+    - description: macAddress of the device
+      jsonPath: .status.deviceDetails.macAddress
+      name: MacAddress
+      type: string
+    - description: serialNumber of the device
+      jsonPath: .status.deviceDetails.serialNumber
+      name: serialNumber
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: NetworkDevice is the Schema for the networkdevices API
@@ -810,16 +831,7 @@ spec:
           status:
             description: NetworkDeviceStatus defines the observed state of NetworkDevice
             properties:
-              discoveryStatus:
-                default: Not Ready
-                description: DiscoveryStatus holds the discovery status of the networkNode
-                enum:
-                - ""
-                - Ready
-                - Not Ready
-                - Discovery
-                type: string
-              hardwareDetails:
+              deviceDetails:
                 description: The discovered DeviceDetails
                 properties:
                   hostname:
@@ -838,6 +850,15 @@ spec:
                     description: SW version
                     type: string
                 type: object
+              discoveryStatus:
+                default: Not Ready
+                description: DiscoveryStatus holds the discovery status of the networkNode
+                enum:
+                - ""
+                - Ready
+                - Not Ready
+                - Discovery
+                type: string
               lastUpdated:
                 description: LastUpdated identifies when this status was last observed.
                 format: date-time
@@ -889,7 +910,7 @@ spec:
           spec:
             description: NetworkNodeSpec defines the desired state of NetworkNode
             properties:
-              device-driver:
+              deviceDriver:
                 description: DeviceDriver defines the device driver details to connect to the network node
                 properties:
                   kind:
@@ -898,6 +919,16 @@ spec:
                     type: string
                 required:
                 - kind
+                type: object
+              grpcServer:
+                description: GrpcServerPort defines the grpc server port
+                properties:
+                  port:
+                    default: 9999
+                    description: Port defines the port of the GRPC server for the device driver
+                    type: integer
+                required:
+                - port
                 type: object
               target:
                 description: Target defines how we connect to the network node
@@ -1691,7 +1722,7 @@ spec:
               usedNetworkNodeSpec:
                 description: UsedNetworkNodeSpec identifies the used networkNode spec when operational state up
                 properties:
-                  device-driver:
+                  deviceDriver:
                     description: DeviceDriver defines the device driver details to connect to the network node
                     properties:
                       kind:
@@ -1700,6 +1731,16 @@ spec:
                         type: string
                     required:
                     - kind
+                    type: object
+                  grpcServer:
+                    description: GrpcServerPort defines the grpc server port
+                    properties:
+                      port:
+                        default: 9999
+                        description: Port defines the port of the GRPC server for the device driver
+                        type: integer
+                    required:
+                    - port
                     type: object
                   target:
                     description: Target defines how we connect to the network node
@@ -1812,6 +1853,17 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
   - watch
 - apiGroups:
   - apps

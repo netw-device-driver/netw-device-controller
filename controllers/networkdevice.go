@@ -28,14 +28,17 @@ import (
 
 // createNetworkDevice function
 func (r *NetworkNodeReconciler) createNetworkDevice(ctx context.Context, nn *nddv1.NetworkNode) error {
+	labels := make(map[string]string)
+	labels["target"] = nn.Name
+	if v, ok := nn.GetLabels()["target-group"]; ok {
+		labels["target-group"] = v
+	}
 
 	nd := &nddv1.NetworkDevice{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nn.Name,
 			Namespace: nn.Namespace,
-			Labels: map[string]string{
-				"netwDevice": nn.Name,
-			},
+			Labels:    labels,
 		},
 		Spec: nddv1.NetworkDeviceSpec{
 			Address: nn.Spec.Target.Address,
@@ -68,6 +71,12 @@ func (r *NetworkNodeReconciler) createNetworkDevice(ctx context.Context, nn *ndd
 
 // updateNetworkDevice function
 func (r *NetworkNodeReconciler) updateNetworkDevice(ctx context.Context, nn *nddv1.NetworkNode) error {
+	labels := make(map[string]string)
+	labels["target"] = nn.Name
+	if v, ok := nn.GetLabels()["target-group"]; ok {
+		labels["target-group"] = v
+	}
+
 	nd := &nddv1.NetworkDevice{}
 	ndKey := types.NamespacedName{
 		Name:      nn.Name,
@@ -77,6 +86,8 @@ func (r *NetworkNodeReconciler) updateNetworkDevice(ctx context.Context, nn *ndd
 		return &GetNetworkDeviceError{message: fmt.Sprintf("Failed to get Network Device: %s", err)}
 		//return err
 	}
+
+	nd.ObjectMeta.Labels = labels
 
 	nd.Spec = nddv1.NetworkDeviceSpec{
 		Address: nn.Spec.Target.Address,

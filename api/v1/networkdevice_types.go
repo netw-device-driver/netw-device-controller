@@ -100,7 +100,7 @@ func (nd *NetworkDevice) SetDiscoveryStatus(status DiscoveryStatus) bool {
 // NetworkDeviceStatus defines the observed state of NetworkDevice
 type NetworkDeviceStatus struct {
 	// The discovered DeviceDetails
-	DeviceDetails *DeviceDetails `json:"hardwareDetails,omitempty"`
+	DeviceDetails *DeviceDetails `json:"deviceDetails,omitempty"`
 
 	// DiscoveryStatus holds the discovery status of the networkNode
 	// +kubebuilder:validation:Enum="";Ready;Not Ready;Discovery
@@ -114,6 +114,11 @@ type NetworkDeviceStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="discoveryStatus",type="string",JSONPath=".status.discoveryStatus",description="Discovery status"
+// +kubebuilder:printcolumn:name="Kind",type="string",JSONPath=".status.deviceDetails.kind",description="Kind of device"
+// +kubebuilder:printcolumn:name="SwVersion",type="string",JSONPath=".status.deviceDetails.swVersion",description="SW version of the device"
+// +kubebuilder:printcolumn:name="MacAddress",type="string",JSONPath=".status.deviceDetails.macAddress",description="macAddress of the device"
+// +kubebuilder:printcolumn:name="serialNumber",type="string",JSONPath=".status.deviceDetails.serialNumber",description="serialNumber of the device"
 
 // NetworkDevice is the Schema for the networkdevices API
 type NetworkDevice struct {

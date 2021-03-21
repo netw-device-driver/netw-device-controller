@@ -3,7 +3,13 @@ apiVersion: ndd.henderiw.be/v1
 kind: NetworkNode
 metadata:
   name: leaf2
+  labels:
+    target-group: leaf-grp1
 spec:
+  grpcServer:
+    port: 9999
+  deviceDriver:
+    kind: gnmi
   target:
     address: 172.20.20.4:57400
     credentialsName: srl-secrets

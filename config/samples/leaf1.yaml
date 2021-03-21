@@ -3,8 +3,12 @@ apiVersion: ndd.henderiw.be/v1
 kind: NetworkNode
 metadata:
   name: leaf1
+  labels:
+    target-group: leaf-grp1
 spec:
-  device-driver:
+  grpcServer:
+    port: 9999
+  deviceDriver:
     kind: gnmi
   target:
     address: 172.20.20.5:57400
