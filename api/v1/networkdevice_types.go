@@ -122,6 +122,7 @@ type NetworkDeviceStatus struct {
 // +kubebuilder:printcolumn:name="SwVersion",type="string",JSONPath=".status.deviceDetails.swVersion",description="SW version of the device"
 // +kubebuilder:printcolumn:name="MacAddress",type="string",JSONPath=".status.deviceDetails.macAddress",description="macAddress of the device"
 // +kubebuilder:printcolumn:name="serialNumber",type="string",JSONPath=".status.deviceDetails.serialNumber",description="serialNumber of the device"
+// +kubebuilder:printcolumn:name="grpcServerPort",type="string",JSONPath=".status.grpcServer.port",description="grpc server port to connect to the devic driver"
 
 // NetworkDevice is the Schema for the networkdevices API
 type NetworkDevice struct {

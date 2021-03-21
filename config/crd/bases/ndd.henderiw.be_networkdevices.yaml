@@ -37,6 +37,10 @@ spec:
       jsonPath: .status.deviceDetails.serialNumber
       name: serialNumber
       type: string
+    - description: grpc server port to connect to the devic driver
+      jsonPath: .status.grpcServer.port
+      name: grpcServerPort
+      type: string
     name: v1
     schema:
       openAPIV3Schema:
