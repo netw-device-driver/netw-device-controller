@@ -107,6 +107,9 @@ type NetworkDeviceStatus struct {
 	// +kubebuilder:default:="Not Ready"
 	DiscoveryStatus *DiscoveryStatus `json:"discoveryStatus"`
 
+	// GrpcServerPort defines the grpc server port
+	GrpcServer *GrpcServerDetails `json:"grpcServer,omitempty"`
+
 	// LastUpdated identifies when this status was last observed.
 	// +optional
 	LastUpdated *metav1.Time `json:"lastUpdated,omitempty"`

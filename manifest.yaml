@@ -859,6 +859,16 @@ spec:
                 - Not Ready
                 - Discovery
                 type: string
+              grpcServer:
+                description: GrpcServerPort defines the grpc server port
+                properties:
+                  port:
+                    default: 9999
+                    description: Port defines the port of the GRPC server for the device driver
+                    type: integer
+                required:
+                - port
+                type: object
               lastUpdated:
                 description: LastUpdated identifies when this status was last observed.
                 format: date-time

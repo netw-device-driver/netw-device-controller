@@ -275,6 +275,11 @@ func (in *NetworkDeviceStatus) DeepCopyInto(out *NetworkDeviceStatus) {
 		*out = new(DiscoveryStatus)
 		**out = **in
 	}
+	if in.GrpcServer != nil {
+		in, out := &in.GrpcServer, &out.GrpcServer
+		*out = new(GrpcServerDetails)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.LastUpdated != nil {
 		in, out := &in.LastUpdated, &out.LastUpdated
 		*out = (*in).DeepCopy()
