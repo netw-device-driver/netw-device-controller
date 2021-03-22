@@ -145,3 +145,5 @@ type NetworkDeviceList struct {
 func init() {
 	SchemeBuilder.Register(&NetworkDevice{}, &NetworkDeviceList{})
 }
+
+func DiscoveryStatusPtr(c DiscoveryStatus) *DiscoveryStatus { return &c }
