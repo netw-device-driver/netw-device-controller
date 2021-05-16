@@ -374,7 +374,7 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		r.publishEvent(ctx, req, nn.NewEvent(fmt.Sprintf("Network Node %s operation up", nn.Name), "created service and device driver deployment"))
 	}
 	if nn.Status.OperationalStatus != nil && *nn.Status.OperationalStatus != nddv1.OperationalStatusUp {
-		r.publishEvent(ctx, req, nn.NewEvent(fmt.Sprintf("Network Node %s operation up", nn.Name), "created service and device driver deployment"))
+		r.publishEvent(ctx, req, nn.NewEvent(fmt.Sprintf("Network Node %s operational status up", nn.Name), "created service and device driver deployment"))
 	}
 
 	return r.handleOKResult(ctx, nn, c)
