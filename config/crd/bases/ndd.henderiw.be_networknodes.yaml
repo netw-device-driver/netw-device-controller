@@ -16,7 +16,36 @@ spec:
     singular: networknode
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Operational status
+      jsonPath: .status.operationalStatus
+      name: PperationalStatus
+      type: string
+    - description: Discovery status
+      jsonPath: .status.discoveryStatus
+      name: DiscoveryStatus
+      type: string
+    - description: Kind of device
+      jsonPath: .status.deviceDetails.kind
+      name: Kind
+      type: string
+    - description: SW version of the device
+      jsonPath: .status.deviceDetails.swVersion
+      name: SwVersion
+      type: string
+    - description: macAddress of the device
+      jsonPath: .status.deviceDetails.macAddress
+      name: MacAddress
+      type: string
+    - description: serialNumber of the device
+      jsonPath: .status.deviceDetails.serialNumber
+      name: serialNumber
+      type: string
+    - description: grpc server port to connect to the devic driver
+      jsonPath: .status.grpcServer.port
+      name: grpcServerPort
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: NetworkNode is the Schema for the networknodes API
@@ -96,6 +125,34 @@ spec:
           status:
             description: NetworkNodeStatus defines the observed state of NetworkNode
             properties:
+              deviceDetails:
+                description: The discovered DeviceDetails
+                properties:
+                  hostname:
+                    description: Host name
+                    type: string
+                  kind:
+                    description: the Kind of hardware
+                    type: string
+                  macAddress:
+                    description: the Mac address of the hardware
+                    type: string
+                  serialNumber:
+                    description: the Serial Number of the hardware
+                    type: string
+                  swVersion:
+                    description: SW version
+                    type: string
+                type: object
+              discoveryStatus:
+                default: Not Ready
+                description: DiscoveryStatus holds the discovery status of the networkNode
+                enum:
+                - ""
+                - Ready
+                - Not Ready
+                - Discovery
+                type: string
               errorCount:
                 default: 0
                 description: ErrorCount records how many times the host has encoutered
@@ -116,6 +173,17 @@ spec:
                 - container error
                 - device driver error
                 type: string
+              grpcServer:
+                description: GrpcServerPort defines the grpc server port
+                properties:
+                  port:
+                    default: 9999
+                    description: Port defines the port of the GRPC server for the
+                      device driver
+                    type: integer
+                required:
+                - port
+                type: object
               lastUpdated:
                 description: LastUpdated identifies when this status was last observed.
                 format: date-time
@@ -1290,6 +1358,7 @@ spec:
                     type: object
                 type: object
             required:
+            - discoveryStatus
             - errorCount
             - errorMessage
             - operationalStatus

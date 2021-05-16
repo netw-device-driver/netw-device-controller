@@ -3,7 +3,6 @@
 # It should be run by config/default
 resources:
 - bases/ndd.henderiw.be_networknodes.yaml
-- bases/ndd.henderiw.be_networkdevices.yaml
 - bases/ndd.henderiw.be_devicedrivers.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 

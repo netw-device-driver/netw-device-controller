@@ -122,22 +122,24 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		if nn.Status.OperationalStatus != nil && *nn.Status.OperationalStatus == nddv1.OperationalStatusUp {
 			// only delete the ddriver deployment and networdevice object when operational status is down
-			if err := r.deleteNetworkDevice(ctx, nn); err != nil {
-				if k8serrors.IsNotFound(err) {
-					// do nothing
-				} else {
-					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
-					r.Log.Info("failed to delete networkDevice",
-						"Error", err)
-					err = r.saveNetworkNodeStatus(ctx, nn)
-					if err != nil {
-						err = errors.Wrap(err, "failed to update error message")
+			/*
+				if err := r.deleteNetworkDevice(ctx, nn); err != nil {
+					if k8serrors.IsNotFound(err) {
+						// do nothing
+					} else {
+						nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+						r.Log.Info("failed to delete networkDevice",
+							"Error", err)
+						err = r.saveNetworkNodeStatus(ctx, nn)
+						if err != nil {
+							err = errors.Wrap(err, "failed to update error message")
+						}
+						//return r.handleErrorResult(ctx, err, req, nn)
+						//return ctrl.Result{}, errors.Wrap(err,
+						//	fmt.Sprintf("failed to delete networkDevice"))
 					}
-					//return r.handleErrorResult(ctx, err, req, nn)
-					//return ctrl.Result{}, errors.Wrap(err,
-					//	fmt.Sprintf("failed to delete networkDevice"))
 				}
-			}
+			*/
 			// delete service
 			if err := r.deleteService(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
@@ -185,23 +187,25 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if err != nil || creds == nil {
 		if nn.Status.OperationalStatus != nil && *nn.Status.OperationalStatus == nddv1.OperationalStatusUp {
 			// only delete the ddriver deployment and networdevice object when operational status is down
-			if err := r.deleteNetworkDevice(ctx, nn); err != nil {
-				if k8serrors.IsNotFound(err) {
-					// do nothing
-				} else {
-					log.Info("failed to delete networkDevice")
-					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
-					r.Log.Info("failed to delete networkDevice",
-						"Error", err)
-					err = r.saveNetworkNodeStatus(ctx, nn)
-					if err != nil {
-						err = errors.Wrap(err, "failed to update error message")
+			/*
+				if err := r.deleteNetworkDevice(ctx, nn); err != nil {
+					if k8serrors.IsNotFound(err) {
+						// do nothing
+					} else {
+						log.Info("failed to delete networkDevice")
+						nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+						r.Log.Info("failed to delete networkDevice",
+							"Error", err)
+						err = r.saveNetworkNodeStatus(ctx, nn)
+						if err != nil {
+							err = errors.Wrap(err, "failed to update error message")
+						}
+						//return r.handleErrorResult(ctx, err, req, nn)
+						//return ctrl.Result{}, errors.Wrap(err,
+						//	fmt.Sprintf("failed to delete networkDevice"))
 					}
-					//return r.handleErrorResult(ctx, err, req, nn)
-					//return ctrl.Result{}, errors.Wrap(err,
-					//	fmt.Sprintf("failed to delete networkDevice"))
 				}
-			}
+			*/
 			// delete service
 			if err := r.deleteService(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
@@ -240,22 +244,24 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if err != nil || c == nil {
 		if nn.Status.OperationalStatus != nil && *nn.Status.OperationalStatus == nddv1.OperationalStatusUp {
 			// only delete the ddriver deployment and networdevice object when operational status is down
-			if err := r.deleteNetworkDevice(ctx, nn); err != nil {
-				if k8serrors.IsNotFound(err) {
-					// do nothing
-				} else {
-					log.Info("failed to delete networkDevice")
-					nn.SetOperationalStatus(nddv1.OperationalStatusDown)
-					err = r.saveNetworkNodeStatus(ctx, nn)
-					if err != nil {
-						err = errors.Wrap(err, "failed to update error message")
-					}
+			/*
+				if err := r.deleteNetworkDevice(ctx, nn); err != nil {
+					if k8serrors.IsNotFound(err) {
+						// do nothing
+					} else {
+						log.Info("failed to delete networkDevice")
+						nn.SetOperationalStatus(nddv1.OperationalStatusDown)
+						err = r.saveNetworkNodeStatus(ctx, nn)
+						if err != nil {
+							err = errors.Wrap(err, "failed to update error message")
+						}
 
-					//return r.handleErrorResult(ctx, err, req, nn)
-					//return ctrl.Result{}, errors.Wrap(err,
-					//	fmt.Sprintf("failed to delete networkDevice"))
+						//return r.handleErrorResult(ctx, err, req, nn)
+						//return ctrl.Result{}, errors.Wrap(err,
+						//	fmt.Sprintf("failed to delete networkDevice"))
+					}
 				}
-			}
+			*/
 			// delete service
 			if err := r.deleteService(ctx, nn); err != nil {
 				if k8serrors.IsNotFound(err) {
@@ -292,12 +298,14 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if nn.Status.OperationalStatus == nil {
 		// when the container was never initialized create it
 		log.Info("Create Deployment and Network Device when Operational status == nil")
-		if err = r.createNetworkDevice(ctx, nn); err != nil {
-			log.Info("Failed to create Network Device...")
-			return r.handleErrorResult(ctx, err, req, nn)
-			//return ctrl.Result{}, errors.Wrap(err,
-			//	fmt.Sprintf("failed to create Network Device"))
-		}
+		/*
+			if err = r.createNetworkDevice(ctx, nn); err != nil {
+				log.Info("Failed to create Network Device...")
+				return r.handleErrorResult(ctx, err, req, nn)
+				//return ctrl.Result{}, errors.Wrap(err,
+				//	fmt.Sprintf("failed to create Network Device"))
+			}
+		*/
 		if err = r.createService(ctx, nn); err != nil {
 			log.Info("failed to create service")
 			return r.handleErrorResult(ctx, err, req, nn)
@@ -314,12 +322,14 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if *nn.Status.OperationalStatus != nddv1.OperationalStatusUp {
 			// only create the container when operational status is down
 			log.Info("Create Deployment and Network Device when Operational status != nil, we should never come here")
-			if err = r.createNetworkDevice(ctx, nn); err != nil {
-				log.Info("Failed to create Network Device...")
-				return r.handleErrorResult(ctx, err, req, nn)
-				//return ctrl.Result{}, errors.Wrap(err,
-				//	fmt.Sprintf("failed to create Network Device"))
-			}
+			/*
+				if err = r.createNetworkDevice(ctx, nn); err != nil {
+					log.Info("Failed to create Network Device...")
+					return r.handleErrorResult(ctx, err, req, nn)
+					//return ctrl.Result{}, errors.Wrap(err,
+					//	fmt.Sprintf("failed to create Network Device"))
+				}
+			*/
 			if err = r.createService(ctx, nn); err != nil {
 				log.Info("failed to create service")
 				return r.handleErrorResult(ctx, err, req, nn)
@@ -336,12 +346,14 @@ func (r *NetworkNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			if !reflect.DeepEqual(c, nn.Status.UsedDeviceDriverSpec.Container) || !reflect.DeepEqual(&nn.Spec, nn.Status.UsedNetworkNodeSpec) {
 				// Device Driver spec changes or Network node spec changes
 				log.Info("Update Deployment and Network Device after changes to device driver or networkNode spec")
-				if err = r.updateNetworkDevice(ctx, nn); err != nil {
-					log.Info("Failed to update Network Device...")
-					return r.handleErrorResult(ctx, err, req, nn)
-					//return ctrl.Result{}, errors.Wrap(err,
-					//	fmt.Sprintf("failed to update Network Device"))
-				}
+				/*
+					if err = r.updateNetworkDevice(ctx, nn); err != nil {
+						log.Info("Failed to update Network Device...")
+						return r.handleErrorResult(ctx, err, req, nn)
+						//return ctrl.Result{}, errors.Wrap(err,
+						//	fmt.Sprintf("failed to update Network Device"))
+					}
+				*/
 				if err = r.updateService(ctx, nn); err != nil {
 					log.Info("failed to create service")
 					return r.handleErrorResult(ctx, err, req, nn)
