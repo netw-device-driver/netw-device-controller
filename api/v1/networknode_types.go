@@ -285,7 +285,7 @@ type NetworkNodeStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="PperationalStatus",type="string",JSONPath=".status.operationalStatus",description="Operational status"
+// +kubebuilder:printcolumn:name="OperationalStatus",type="string",JSONPath=".status.operationalStatus",description="Operational status"
 // +kubebuilder:printcolumn:name="DiscoveryStatus",type="string",JSONPath=".status.discoveryStatus",description="Discovery status"
 // +kubebuilder:printcolumn:name="Kind",type="string",JSONPath=".status.deviceDetails.kind",description="Kind of device"
 // +kubebuilder:printcolumn:name="SwVersion",type="string",JSONPath=".status.deviceDetails.swVersion",description="SW version of the device"

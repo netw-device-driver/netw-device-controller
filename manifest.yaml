@@ -1136,7 +1136,7 @@ spec:
   - additionalPrinterColumns:
     - description: Operational status
       jsonPath: .status.operationalStatus
-      name: PperationalStatus
+      name: OperationalStatus
       type: string
     - description: Discovery status
       jsonPath: .status.discoveryStatus
