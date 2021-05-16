@@ -71,26 +71,6 @@ rules:
 - apiGroups:
   - ndd.henderiw.be
   resources:
-  - networkdevices
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ndd.henderiw.be
-  resources:
-  - networkdevices/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ndd.henderiw.be
-  resources:
   - networknodes
   verbs:
   - create

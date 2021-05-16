@@ -59,8 +59,6 @@ type NetworkNodeReconciler struct {
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=list;watch;get
 // +kubebuilder:rbac:groups="",resources=events,verbs=list;watch;get;patch;create;update;delete
 // +kubebuilder:rbac:groups=ndd.henderiw.be,resources=devicedrivers,verbs=get;list;watch
-// +kubebuilder:rbac:groups=ndd.henderiw.be,resources=networkdevices,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ndd.henderiw.be,resources=networkdevices/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=ndd.henderiw.be,resources=networknodes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ndd.henderiw.be,resources=networknodes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=ndd.henderiw.be,resources=networknodes/finalizers,verbs=update
