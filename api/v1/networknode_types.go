@@ -279,8 +279,7 @@ type NetworkNodeStatus struct {
 
 	// DiscoveryStatus holds the discovery status of the networkNode
 	// +kubebuilder:validation:Enum="";Ready;Not Ready;Discovery
-	// +kubebuilder:default:="Not Ready"
-	DiscoveryStatus *DiscoveryStatus `json:"discoveryStatus"`
+	DiscoveryStatus *DiscoveryStatus `json:"discoveryStatus,omitempty"`
 
 	// The discovered DeviceDetails
 	DeviceDetails *DeviceDetails `json:"deviceDetails,omitempty"`

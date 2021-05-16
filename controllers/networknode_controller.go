@@ -445,7 +445,6 @@ func (r *NetworkNodeReconciler) handleOKResult(ctx context.Context, nn *nddv1.Ne
 
 func (r *NetworkNodeReconciler) setOKCondition(ctx context.Context, nn *nddv1.NetworkNode, c *corev1.Container) (err error) {
 	nn.SetOperationalStatus(nddv1.OperationalStatusUp)
-	nn.SetDiscoveryStatus(nddv1.DiscoveryStatusNone)
 	nn.SetErrorType(nddv1.NoneError)
 	nn.SetErrorMessage(stringPtr(""))
 	nn.SetUsedDeviceDriverSpec(c)
@@ -547,7 +546,6 @@ func (r *NetworkNodeReconciler) setErrorCondition(ctx context.Context, req ctrl.
 	logger := r.Log.WithValues("networknode", req.NamespacedName)
 
 	nn.SetOperationalStatus(nddv1.OperationalStatusDown)
-	nn.SetDiscoveryStatus(nddv1.DiscoveryStatusNone)
 	nn.SetErrorType(errType)
 	nn.SetErrorMessage(&message)
 	nn.SetUsedDeviceDriverSpec(nil)

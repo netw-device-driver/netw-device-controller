@@ -1262,7 +1262,6 @@ spec:
                     type: string
                 type: object
               discoveryStatus:
-                default: Not Ready
                 description: DiscoveryStatus holds the discovery status of the networkNode
                 enum:
                 - ""
@@ -2475,7 +2474,6 @@ spec:
                     type: object
                 type: object
             required:
-            - discoveryStatus
             - errorCount
             - errorMessage
             - operationalStatus
