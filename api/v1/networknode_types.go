@@ -17,8 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -232,11 +230,29 @@ func String2DiscoveryStatus(s string) *DiscoveryStatus {
 
 // SetDiscoveryStatus updates the DiscoveryStatus field and returns
 // true when a change is made or false when no change is made.
+/*
 func (nn *NetworkNode) SetDiscoveryStatus(status DiscoveryStatus) bool {
 	if nn.Status.DiscoveryStatus != String2DiscoveryStatus(fmt.Sprintf("%s", status)) {
 		nn.Status.DiscoveryStatus = String2DiscoveryStatus(fmt.Sprintf("%s", status))
 		return true
 	}
+	return false
+}
+*/
+
+// SetDiscoveryStatus updates the DiscoveryStatus field and returns
+// true when a change is made or false when no change is made.
+func (nn *NetworkNode) SetDiscoveryStatus(status DiscoveryStatus) bool {
+	if nn.Status.DiscoveryStatus == nil {
+		nn.Status.DiscoveryStatus = new(DiscoveryStatus)
+		*nn.Status.DiscoveryStatus = status
+		return true
+	}
+	if *nn.Status.DiscoveryStatus != status {
+		*nn.Status.DiscoveryStatus = status
+		return true
+	}
+
 	return false
 }
 
